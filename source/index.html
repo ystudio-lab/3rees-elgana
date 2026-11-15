@@ -864,6 +864,68 @@
   /* main menu = logo + hero + PLAY; character / mission choice now lives on its own screens */
   #menuCar, #menu .mission-card, #charsBtn { display: none !important; }
   @media (prefers-reduced-motion: reduce) { .fl-logo, .fl-shimmer i { animation: none; } }
+
+  /* ===== M01 ONLY — premium HUD + controls (scoped to body[data-m="1"]; other missions keep their existing UI) ===== */
+  :root { --k: .92; --ctl-edge: max(12px, env(safe-area-inset-right, 0px)); --ctl-bot: calc(env(safe-area-inset-bottom, 0px) + 18px + var(--ctl-lift, 0px)); --glass: rgba(10,29,49,.55); --glass-line: rgba(255,214,140,.5); }
+  #joy, #ctlAct, #hudChar { display: none; }
+  body[data-m="1"] #joy, body[data-m="1"] #ctlAct { display: block; } body[data-m="1"] #hudChar { display: block; }
+  /* -- top HUD: pause + radio | score | health + portrait; objective underneath; resources below -- */
+  body[data-m="1"] #pauseBtn { width: 40px; height: 40px; border-radius: 13px; top: var(--top); left: 12px; background: var(--glass); border: 1.5px solid var(--glass-line); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+  body[data-m="1"] #pauseBtn::before { width: 17px; height: 17px; }
+  body[data-m="1"] #radioBtn { top: var(--top) !important; left: 60px !important; width: 40px !important; height: 40px !important; border-radius: 13px !important; background: var(--glass) !important; border: 1.5px solid var(--glass-line) !important; box-shadow: 0 3px 10px rgba(0,0,0,.35) !important; }
+  body[data-m="1"] #radioBtn svg { width: 19px; height: 19px; }
+  body[data-m="1"] #score { top: var(--top); height: 40px; box-sizing: border-box; padding: 0 14px 0 30px; min-width: 0; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
+  body[data-m="1"] #score { padding: 0 14px; gap: 6px; justify-content: center; } body[data-m="1"] #score::before { position: static; flex: none; width: 16px; height: 16px; margin: 0; } body[data-m="1"] #scoreVal { font-size: 20px; line-height: 1; }
+  body[data-m="1"] #hudChar { position: absolute; top: var(--top); right: 12px; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E6A82E; object-fit: cover; object-position: 50% 18%; background: radial-gradient(circle at 50% 30%, #2a5d8c, #0A1D31); box-shadow: 0 3px 10px rgba(0,0,0,.4); z-index: 12; pointer-events: none; }
+  body[data-m="1"] #hits { top: calc(var(--top) + 4px); right: 60px; transform: none; height: 34px; box-sizing: border-box; padding: 0 9px; gap: 2px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
+  body[data-m="1"] #hits .h { width: 17px; height: 17px; }
+  body[data-m="1"] #progress { top: calc(var(--top) + 52px); left: 12px; right: 12px; padding: 5px 12px 7px; border-radius: 14px; border: 1.5px solid rgba(255,214,140,.3); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); }
+  body[data-m="1"] #progress .ptop { font-size: 13px; justify-content: center; } body[data-m="1"] #progress .ptop span { color: #fff3d6; } body[data-m="1"] #pPct { display: none; }
+  body[data-m="1"] #progress .pbar { height: 5px; margin-top: 5px; border: 0; background: rgba(255,255,255,.16); } body[data-m="1"] #progress .pbar i { border-radius: 4px; } body[data-m="1"] #progress .pm { height: 9px; top: -2px; }
+  body[data-m="1"] #caneChip { top: calc(var(--top) + 102px); left: 12px; right: auto; height: 30px; box-sizing: border-box; padding: 0 10px 0 3px; gap: 6px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); opacity: 1; flex-direction: row-reverse; }
+  body[data-m="1"] #caneChip > span, body[data-m="1"] #caneChip small { display: none; }
+  body[data-m="1"] #caneChip i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 50% 22%, #2a5d8c, #0A1D31 85%); border: 1.5px solid #E6A82E; -webkit-mask: none; mask: none; box-shadow: none; position: relative; }
+  body[data-m="1"] #caneChip i::after { content: ''; position: absolute; inset: 4px; background: #9fd35c; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; }
+  body[data-m="1"] #caneChip b { font-size: 13px; font-weight: 900; color: #fff6d6; font-variant-numeric: tabular-nums; } body[data-m="1"] #caneChip.done { background: rgba(28,100,52,.6); }
+  body[data-m="1"] #bossBar { top: calc(var(--top) + 140px) !important; left: 12px !important; right: 12px !important; }
+  /* -- dialogue: temporary, top of the screen, never over the controls or the lane -- */
+  body[data-m="1"] #speaker, body[data-m="1"] #combat.show ~ #speaker { top: calc(var(--top) + 140px); bottom: auto; left: 12px; right: 12px; padding: 5px 12px 5px 5px; gap: 9px; border: 1.5px solid var(--glass-line); border-radius: 16px; background: rgba(10,29,49,.78); box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+  body[data-m="1"] #spImg { width: 38px; height: 42px; border-width: 2px; border-radius: 11px; } body[data-m="1"] #speaker #spText { font-size: 14px; }
+  /* -- power-ups sit above the joystick -- */
+  body[data-m="1"] #powers { left: var(--ctl-edge); right: auto; transform: none; bottom: calc(var(--ctl-bot) + 108px * var(--k) + 12px); justify-content: flex-start; }
+  [data-chand="l"][data-m="1"] #powers { left: auto; right: var(--ctl-edge); }
+  body[data-m="1"] .pw { width: 50px; height: 50px; } body[data-m="1"] .pw img { width: 34px; height: 34px; margin-top: -4px; }
+  body[data-m="1"] .pw b { bottom: -3px; right: -5px; padding: 0 6px; border-radius: 999px; background: #08192A; border: 1.5px solid #E6A82E; font-size: 11px; line-height: 16px; }
+  body[data-m="1"] .pw small { display: none; }
+  /* -- controls: translucent glass, clean icons, subtle pressed state -- */
+  body[data-m="1"] #ctlAct { position: absolute; inset: 0; pointer-events: none; z-index: 24; direction: ltr; }
+  .cb.sl-p, #combat .cbtn.sl-p { --w: 72; --ox: 0; --oy: 0; } .cb.sl-a { --w: 56; --ox: 84; --oy: 6; }
+  body[data-m="1"] #toolBtn { --w: 54; --ox: 11; --oy: 87; } body[data-m="1"] #guardBtn { --w: 52; --ox: 76; --oy: 66; }
+  body[data-m="1"] #ctlAct .cb, body[data-m="1"] #combat .cbtn { position: absolute; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; display: grid; place-items: center; padding: 0; margin: 0; cursor: pointer;
+    width: calc(var(--w) * var(--k) * 1px); height: calc(var(--w) * var(--k) * 1px); bottom: calc(var(--ctl-bot) + var(--oy) * var(--k) * 1px); right: calc(var(--ctl-edge) + var(--ox) * var(--k) * 1px); left: auto; border-radius: 50%; color: #FFE9B0;
+    border: 1.5px solid rgba(255,224,160,.55); background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); transition: transform .08s ease-out, background .12s, box-shadow .12s, filter .15s; }
+  [data-chand="l"] body[data-m="1"] #ctlAct .cb, body[data-chand="l"][data-m="1"] #ctlAct .cb, body[data-chand="l"][data-m="1"] #combat .cbtn { right: auto; left: calc(max(12px, env(safe-area-inset-left, 0px)) + var(--ox) * var(--k) * 1px); }
+  body[data-m="1"] #ctlAct .cb.sl-p { background: radial-gradient(circle at 50% 28%, rgba(255,214,110,.62), rgba(214,140,20,.5) 78%); border-color: rgba(255,236,170,.8); color: #fff8e0; }
+  body[data-m="1"] #ctlAct .cb .ic { width: calc(var(--w) * var(--k) * .46px); height: calc(var(--w) * var(--k) * .46px); display: block; } body[data-m="1"] #ctlAct .cb .ic svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  body[data-m="1"] .cb .st { fill: none; stroke: currentColor; stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+  body[data-m="1"] #ctlAct .cb.on, body[data-m="1"] #combat .cbtn:active:not(.cool), body[data-m="1"] #combat .cbtn.up { transform: scale(.92); background: radial-gradient(circle at 50% 28%, rgba(255,224,130,.85), rgba(240,170,40,.7) 78%); border-color: #FFF3C4; color: #3a2204; box-shadow: 0 0 0 3px rgba(255,224,138,.35), 0 0 18px rgba(255,190,61,.65), inset 0 2px 8px rgba(0,0,0,.25); }
+  body[data-m="1"] #combat { position: absolute; inset: 0; display: none; pointer-events: none; z-index: 26; } body[data-m="1"] #combat.show { display: block; }
+  body[data-m="1"] #combat .cbtn small { display: none; } body[data-m="1"] #combat .cbtn svg { width: calc(var(--w) * var(--k) * .48px); height: calc(var(--w) * var(--k) * .48px); fill: currentColor; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  body[data-m="1"] #combat .cbtn.guard { background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+  body[data-m="1"] #combat #toolBtn { background: radial-gradient(circle at 50% 28%, rgba(233,75,60,.6), rgba(120,24,16,.6) 78%); }
+  body[data-m="1"] #combat .cbtn i { top: -4px; inset-inline-end: -4px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #FFBE3D; color: #3a2204; border: 2px solid #08192A; font: 900 12px/16px system-ui; }
+  body[data-m="1"] #combat .cbtn.cool { filter: grayscale(.7) brightness(.8); }
+  /* -- joystick -- */
+  body[data-m="1"] #joy { position: absolute; z-index: 24; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: content-box;
+    width: calc(108px * var(--k)); height: calc(108px * var(--k)); padding: calc(10px * var(--k)); margin: calc(-10px * var(--k)); left: max(12px, env(safe-area-inset-left, 0px)); bottom: var(--ctl-bot); }
+  [data-chand="l"][data-m="1"] #joy { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); }
+  #joy .jr { position: absolute; inset: calc(10px * var(--k)); border-radius: 50%; border: 1.5px solid rgba(255,224,160,.5); background: radial-gradient(circle at 50% 40%, rgba(60,110,160,.38), rgba(10,29,49,.55) 78%); box-shadow: 0 4px 12px rgba(0,0,0,.35), inset 0 2px 10px rgba(0,0,0,.35); transition: border-color .12s, box-shadow .12s; }
+  #joy.on .jr { border-color: rgba(255,236,170,.9); box-shadow: 0 4px 12px rgba(0,0,0,.35), 0 0 16px rgba(255,190,61,.45), inset 0 2px 10px rgba(0,0,0,.35); }
+  #joy .ar { position: absolute; width: 0; height: 0; opacity: .7; border: calc(5px * var(--k)) solid transparent; }
+  #joy .ar.u { top: 8%; left: 50%; margin-left: calc(-5px * var(--k)); border-bottom: calc(8px * var(--k)) solid #FFD9A0; border-top: 0; } #joy .ar.d { bottom: 8%; left: 50%; margin-left: calc(-5px * var(--k)); border-top: calc(8px * var(--k)) solid #FFD9A0; border-bottom: 0; }
+  #joy .ar.l { left: 8%; top: 50%; margin-top: calc(-5px * var(--k)); border-right: calc(8px * var(--k)) solid #FFD9A0; border-left: 0; } #joy .ar.r { right: 8%; top: 50%; margin-top: calc(-5px * var(--k)); border-left: calc(8px * var(--k)) solid #FFD9A0; border-right: 0; }
+  #joy .jk { position: absolute; left: 50%; top: 50%; width: calc(46px * var(--k)); height: calc(46px * var(--k)); margin: calc(-23px * var(--k)) 0 0 calc(-23px * var(--k)); border-radius: 50%; will-change: transform; border: 1.5px solid rgba(255,240,190,.8);
+    background: radial-gradient(circle at 38% 30%, rgba(255,236,160,.9), rgba(235,160,30,.75) 80%); box-shadow: 0 3px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.6); } #joy.on .jk { background: radial-gradient(circle at 38% 30%, #fff8d2, rgba(255,200,70,.95) 80%); box-shadow: 0 2px 6px rgba(0,0,0,.45), 0 0 14px rgba(255,200,70,.8); }
 </style>
 <script>
 /* Embedded copy of characters/cast.js (master copy) so this page works on its own. */
@@ -1490,6 +1552,7 @@
 <body data-flow="boot">
 <div id="stage">
   <div id="hud" class="ui">
+    <img id="hudChar" class="ui" alt="" draggable="false">
     <div id="hits" class="ui chip" aria-label="الصحة">♥♥♥</div>
     <div id="score" class="ui chip"><small data-i18n="score">النقاط</small><span id="scoreVal">0</span></div>
     <button id="pauseBtn" class="ui" type="button" aria-label="إيقاف مؤقت"></button>
@@ -1641,6 +1704,11 @@
       <div class="set-group"><div class="set-title" data-i18n="display">العرض</div>
         <div class="set-row"><span data-i18n="quality">جودة الرسوم</span><div class="seg"><button id="qualityHigh" class="seg-btn" type="button" data-i18n="high">عالية</button><button id="qualityLow" class="seg-btn" type="button" data-i18n="low">منخفضة</button></div></div>
         <div class="set-row"><span data-i18n="language">اللغة</span><div class="seg"><button id="langAr" class="seg-btn" type="button">العربية</button><button id="langEn" class="seg-btn" type="button">English</button></div></div>
+      </div>
+      <div class="set-group" id="ctlGroup"><div class="set-title" data-i18n="ctlTitle">التحكم</div>
+        <div class="set-row"><span data-i18n="ctlHand">مكان الأزرار</span><div class="seg"><button class="seg-btn" type="button" data-ctl="hand:r" data-i18n="ctlRight"></button><button class="seg-btn" type="button" data-ctl="hand:l" data-i18n="ctlLeft"></button></div></div>
+        <div class="set-row"><span data-i18n="ctlSize">حجم التحكم</span><div class="seg"><button class="seg-btn" type="button" data-ctl="size:0.88" data-i18n="ctlS"></button><button class="seg-btn" type="button" data-ctl="size:1" data-i18n="ctlM"></button><button class="seg-btn" type="button" data-ctl="size:1.12" data-i18n="ctlL"></button></div></div>
+        <div class="set-row"><span data-i18n="ctlLift">ارتفاع التحكم</span><div class="seg"><button class="seg-btn" type="button" data-ctl="lift:0" data-i18n="ctlNorm"></button><button class="seg-btn" type="button" data-ctl="lift:1" data-i18n="ctlHigh"></button></div></div>
       </div>
       <div class="set-group" id="replayRow"><div class="set-row"><span>الافتتاحية السينمائية</span><button id="replayIntroBtn" class="seg-btn" type="button">إعادة الافتتاحية</button></div></div>
       <p class="fine" data-i18n="audioNote">كل الأصوات متولّدة بالكود. مفيش تسجيلات صوتية للشخصيات لسه.</p>
@@ -4232,7 +4300,7 @@ function resumeGame() { if (ui.mode === 'pause') { clock.getDelta(); show('playi
 
 // ---- M10.2: localisation (Arabic default, English) ----
 const L10N = {
-  ar: { ldStart: 'جاري التشغيل…', ldFonts: 'تجهيز الخطوط', ldMenu: 'تجهيز القائمة', ldReady: 'جاهز!', ldMission: 'تجهيز المهمة', ldVoices: 'تحميل أصوات الشخصيات', ldStage: 'بناء المكان', ldWarm: 'تسخين الرسوم', skipIntro: 'تخطي ▸▸', kicker: 'مغامرة جري مصرية كوميدية', playingAs: 'بتلعب بـ', play: 'العب', characters: 'الشخصيات', levels: 'المراحل', chooseChar: 'اختار شخصيتك', confirmChar: 'اختار وكمّل',
+  ar: { ctlTitle: 'التحكم', ctlHand: 'مكان الأزرار', ctlRight: 'يمين', ctlLeft: 'شمال', ctlSize: 'حجم التحكم', ctlS: 'صغير', ctlM: 'وسط', ctlL: 'كبير', ctlLift: 'ارتفاع التحكم', ctlNorm: 'عادي', ctlHigh: 'أعلى', ctlJump: 'قفز', ctlSlide: 'تزحلق', ldStart: 'جاري التشغيل…', ldFonts: 'تجهيز الخطوط', ldMenu: 'تجهيز القائمة', ldReady: 'جاهز!', ldMission: 'تجهيز المهمة', ldVoices: 'تحميل أصوات الشخصيات', ldStage: 'بناء المكان', ldWarm: 'تسخين الرسوم', skipIntro: 'تخطي ▸▸', kicker: 'مغامرة جري مصرية كوميدية', playingAs: 'بتلعب بـ', play: 'العب', characters: 'الشخصيات', levels: 'المراحل', chooseChar: 'اختار شخصيتك', confirmChar: 'اختار وكمّل',
         chooseLevel: 'اختار المرحلة', start: 'ابدأ المهمة', chooseRide: 'اختار المواصلة', confirmRide: 'اركب ويلا', settings: 'الإعدادات', audio: 'الصوت', music: 'الموسيقى', sfx: 'المؤثرات',
         ambient: 'صوت الشارع', voices: 'همهمة الشخصيات', muteAll: 'كتم الصوت', display: 'العرض', quality: 'جودة الرسوم', high: 'عالية', low: 'منخفضة', language: 'اللغة',
         audioNote: 'كل الموسيقى والأصوات متولّدة بالكود جوه اللعبة. مفيش تسجيلات صوتية حقيقية للشخصيات لسه — الهمهمة مؤثر صوتي مش كلام.',
@@ -4252,7 +4320,7 @@ const L10N = {
         hankTease: 'ماشي يا سيد فلفل... الجولة الجاية بتاعتي!', hankTeaseAny: 'ماشي... الجولة الجاية بتاعتي!',
         bonusTag: 'بونص', goalBoss: 'اهزم بؤجة', goalPowers: 'باور أب: محشي · شربات · أم رجب', resBoss: 'هزيمة بؤجة', resProgress: 'وصلت لحد', resPowers: 'باور أب اتجمع',
         stationName: 'راديو الحارة · FM 97.5', testTag: 'اختبار', startTest: 'جرّب المرحلة (اختبار)', testMode: 'وضع الاختبار', stageTest: 'وضع الاختبار: بيئة المرحلة بس — لعب المرحلة نفسها لسه ماتبنيش', testNoRide: 'وضع الاختبار: جري على رجليك — المركبات لسه ماتبنتش', angStation: 'راديو الحارة · أنغامي', srcAng: 'أنغامي', srcLoc: 'راديو محلي', angLoading: 'جاري تحميل أنغامي…', angHint: 'اضغط ▶ في مشغّل أنغامي · معاينات ٣٠ ثانية', radioStart: 'تشغيل الراديو', radioOnLbl: 'الراديو: شغّال', radioOffLbl: 'الراديو: مقفول', radioVolHint: 'الصوت من جهازك أو من مشغّل أنغامي', angFail: 'تعذّر تحميل أنغامي — اتحوّل للراديو المحلي', all: 'الكل', collapse: 'طي', radioOff: 'الراديو مقفول', placeholderNote: 'مقطوعة مؤقتة متولّدة بالكود — مش أغنية حقيقية', radioFileError: 'الملف ده مش راضي يشتغل — اتنقلنا للي بعده' },
-  en: { ldStart: 'Starting…', ldFonts: 'Preparing fonts', ldMenu: 'Preparing the menu', ldReady: 'Ready!', ldMission: 'Preparing the mission', ldVoices: 'Loading character voices', ldStage: 'Building the stage', ldWarm: 'Warming up graphics', skipIntro: 'Skip ▸▸', kicker: 'An Egyptian comedy runner', playingAs: 'Playing as', play: 'Play', characters: 'Characters', levels: 'Levels', chooseChar: 'Choose your character', confirmChar: 'Select & continue',
+  en: { ctlTitle: 'Controls', ctlHand: 'Button side', ctlRight: 'Right', ctlLeft: 'Left', ctlSize: 'Control size', ctlS: 'Small', ctlM: 'Medium', ctlL: 'Large', ctlLift: 'Control height', ctlNorm: 'Normal', ctlHigh: 'Higher', ctlJump: 'Jump', ctlSlide: 'Slide', ldStart: 'Starting…', ldFonts: 'Preparing fonts', ldMenu: 'Preparing the menu', ldReady: 'Ready!', ldMission: 'Preparing the mission', ldVoices: 'Loading character voices', ldStage: 'Building the stage', ldWarm: 'Warming up graphics', skipIntro: 'Skip ▸▸', kicker: 'An Egyptian comedy runner', playingAs: 'Playing as', play: 'Play', characters: 'Characters', levels: 'Levels', chooseChar: 'Choose your character', confirmChar: 'Select & continue',
         chooseLevel: 'Choose a level', start: 'Start mission', chooseRide: 'Choose your ride', confirmRide: "Let's ride", settings: 'Settings', audio: 'Audio', music: 'Music', sfx: 'Sound effects',
         ambient: 'Street ambience', voices: 'Character babble', muteAll: 'Mute all', display: 'Display', quality: 'Graphics quality', high: 'High', low: 'Low', language: 'Language',
         audioNote: 'All music and sound is generated in code inside the game. There are no real character voice recordings yet — the babble is a sound effect, not speech.',
@@ -5423,7 +5491,7 @@ const dragEl = document.createElement('div'); dragEl.id = 'dragViz'; dragEl.inne
 
 function dragViz(on, ox, oy, dx) { if (!on) { dragEl.style.display = 'none'; return; } dragEl.style.display = 'block'; dragEl.style.left = ox + 'px'; dragEl.style.top = oy + 'px'; dragEl.firstChild.style.transform = `translateX(${Math.max(-1, Math.min(1, dx)) * 26}px)`; }
 const DRAG_MODES = [5, 6, 7, 8, 9];                                           // vehicles + stealth + exploration steer by dragging; lane missions (02/03/04) use M01 swipes
-const SWIPE_IGNORE = 'button, input, select, a, .btn, .icon-btn, .gmb, .cbtn, #gmSym, #radioDock, .noswipe';
+const SWIPE_IGNORE = 'button, input, select, a, .btn, .icon-btn, .gmb, .cbtn, #gmSym, #radioDock, .noswipe, #joy, #ctlAct';
 stage.addEventListener('pointerdown', (e) => {
   if (swipe && swipe.id !== e.pointerId) return;                               // second finger: ignored
   if (e.target.closest && e.target.closest(SWIPE_IGNORE)) { swipe = null; return; }
@@ -5443,7 +5511,7 @@ stage.addEventListener('pointermove', (e) => {
   else if (Math.max(ax, ay) > SWIPE_MIN * 2.2) a = ax > ay ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'jump' : 'slide');   // never-clear diagonal: take the larger axis
   if (!a || a === swipe.fired && (a === 'left' || a === 'right' ? Math.abs(dx) < SWIPE_MIN : Math.abs(dy) < SWIPE_MIN)) return;
   swipe.fired = a; swipe.x = e.clientX; swipe.y = e.clientY;
-  input(a);
+  if (STAGE.n === 1) ctlInput(a, 'swipe'); else input(a);
 });
 for (const ev of ['pointerup', 'pointercancel']) window.addEventListener(ev, (e) => { if (swipe && swipe.id === e.pointerId) { swipe = null; GM.drag = 0; dragViz(false); } }, true);   // window-level: a finger released outside the stage can't leave a swipe stuck
 window.addEventListener('blur', () => { swipe = null; GM.drag = 0; dragViz(false); });
@@ -5565,6 +5633,58 @@ const gmGo = () => GM.go || gmKey('ArrowUp', 'KeyW');
 const gmBrake = () => GM.brake || gmKey('ArrowDown', 'KeyS');
 const steerBtns = () => [{ id: 'L', label: gt('left'), side: 'l', down: () => { GM.pL = true; }, up: () => { GM.pL = false; } }, { id: 'R', label: gt('right'), side: 'l', down: () => { GM.pR = true; }, up: () => { GM.pR = false; } }];
 
+
+// ===== M01 CONTROLS: translucent joystick + contextual buttons, running side by side with the existing swipe gestures =====
+const CTL = Object.assign({ hand: 'r', size: 1, lift: 0 }, (() => { try { return JSON.parse(localStorage.getItem('arees.controls')) || {}; } catch { return {}; } })());
+const CI = { jump: '<path class="st" d="M6 14l6-6 6 6M6 20l6-6 6 6"/>', slide: '<path class="st" d="M6 4l6 6 6-6M6 10l6 6 6-6"/>' };
+const ctlSvg = (k) => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${CI[k]}</svg>`;
+const ctlAct = document.createElement('div'); ctlAct.id = 'ctlAct'; ctlAct.className = 'ui'; hudEl.appendChild(ctlAct);
+const joy = document.createElement('div'); joy.id = 'joy'; joy.className = 'ui'; joy.innerHTML = '<div class="jr"><i class="ar u"></i><i class="ar d"></i><i class="ar l"></i><i class="ar r"></i></div><div class="jk"></div>';
+hudEl.appendChild(joy); const joyKnob = joy.querySelector('.jk');
+const J = { id: null, fired: null, n: 0, last: null };
+const ctlLast = { a: null, t: 0 };
+function ctlInput(a, src) {                                                     // one gate for joystick + swipe: the same action twice inside 160 ms (both inputs firing for one gesture) is ignored
+  const now = performance.now(); if (ctlLast.a === a && now - ctlLast.t < 160) return false; ctlLast.a = a; ctlLast.t = now; ctlLast.n = (ctlLast.n || 0) + 1; ctlLast.src = src; input(a); return true;
+}
+const ctlVib = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch {} };
+function ctlApply() {
+  const k = Math.max(0.92, Math.min(1.08, Math.min(innerWidth * 0.2 / 72, innerHeight / 780 * 1.02))) * CTL.size;
+  const st = document.documentElement.style; st.setProperty('--k', k.toFixed(3)); st.setProperty('--ctl-lift', (CTL.lift * 34) + 'px');
+  document.body.dataset.chand = CTL.hand;
+  document.querySelectorAll('[data-ctl]').forEach((b) => { const [key, v] = b.dataset.ctl.split(':'); b.classList.toggle('on', String(CTL[key]) === v); });
+}
+addEventListener('resize', ctlApply); addEventListener('orientationchange', ctlApply);
+document.addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('[data-ctl]'); if (!b) return; const [key, v] = b.dataset.ctl.split(':'); CTL[key] = key === 'hand' ? v : +v; try { localStorage.setItem('arees.controls', JSON.stringify(CTL)); } catch {} ctlApply(); });
+function joyRelease() { J.id = null; J.fired = null; joyKnob.style.transform = 'translate3d(0,0,0)'; joy.classList.remove('on'); }
+function joyUpdate(e) {
+  const r = joy.querySelector('.jr').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R = r.width * 0.3;
+  let dx = e.clientX - cx, dy = e.clientY - cy; const m = Math.hypot(dx, dy); if (m > R) { dx *= R / m; dy *= R / m; }
+  const nx = dx / R, ny = dy / R, mag = Math.hypot(nx, ny); joyKnob.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0)`;
+  if (ui.mode !== 'playing') return;
+  let a = null;                                                                 // one push = one action (like a swipe); back to the centre (or the other way) arms the next one
+  if (mag > 0.6) { if (Math.abs(nx) > Math.abs(ny) * 1.15) a = nx < 0 ? 'left' : 'right'; else if (Math.abs(ny) > Math.abs(nx) * 1.15) a = ny < 0 ? 'jump' : 'slide'; }
+  if (mag < 0.35) J.fired = null;
+  if (a && a !== J.fired) { J.fired = a; if (ctlInput(a, 'joy')) { J.n++; J.last = a; ctlVib(10); } }
+}
+joy.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (J.id !== null) return; J.id = e.pointerId; try { joy.setPointerCapture(e.pointerId); } catch {} joy.classList.add('on'); joyUpdate(e); });
+joy.addEventListener('pointermove', (e) => { if (e.pointerId === J.id) { e.preventDefault(); joyUpdate(e); } });
+for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEventListener(ev, (e) => { if (e.pointerId === J.id) joyRelease(); });
+window.addEventListener('blur', joyRelease);
+function ctlBuild() {                                                           // after every mission (re)start; only M01 shows these controls
+  ctlAct.innerHTML = ''; joyRelease();
+  if (STAGE.n !== 1) return;
+  for (const [id, key, label, slot, act] of [['J', 'jump', t('ctlJump'), 'p', 'jump'], ['S', 'slide', t('ctlSlide'), 'a', 'slide']]) {
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'cb sl-' + slot; el.dataset.id = id; el.setAttribute('aria-label', label);
+    el.innerHTML = `<span class="ic">${ctlSvg(key)}</span>`;
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('on'); ctlVib(8); try { el.setPointerCapture(e.pointerId); } catch {} ctlInput(act, 'btn'); });
+    const up = () => el.classList.remove('on'); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+    ctlAct.appendChild(el);
+  }
+  try { document.getElementById('hudChar').src = charThumb(SEL.char); } catch {}
+  ctlApply();
+}
+ctlApply();
+
 // ---- small helpers: seeded RNG, cached geometry/material, primitives ----
 const gmRand = (seed) => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
 const GMC = {};
@@ -5611,7 +5731,8 @@ function gmClear() {
   gmCam([0, 5.4, 6.2], [0, 0, -10], 0.6, CAMERA.fov, 6);
 }
 GM.root = new THREE.Group(); GM.root.name = 'GM_root'; GM.root.visible = false; scene.add(GM.root);
-function gmReset() {                                                       // called from restart(): rebuild the active mission's mode (or switch it all off for 01 / 10)
+function gmReset() { document.body.dataset.m = String(STAGE.n); gmReset0(); ctlBuild(); }
+function gmReset0() {                                                      // called from restart(): rebuild the active mission's mode (or switch it all off for 01 / 10)
   gmClear();
   const n = STAGE.n, factory = GM.modes[n];
   caneChip.style.display = n === 1 ? '' : 'none';
@@ -6946,7 +7067,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__arees = { FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__arees = { ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
