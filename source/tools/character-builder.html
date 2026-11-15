@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عريس الجنة — معاينة الشخصيات (Sayed C1)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1a1410; color: #fff8ec; font: 14px system-ui, Tahoma, sans-serif; }
+  #wrap { display: flex; height: 100%; }
+  #side { width: 260px; padding: 14px; box-sizing: border-box; background: #241c16; overflow: auto; }
+  #side h1 { font-size: 17px; margin: 0 0 4px; } #side p { margin: 0 0 12px; opacity: .7; font-size: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  button { flex: 1 1 45%; min-height: 40px; border: 0; border-radius: 10px; background: #3a2e24; color: #fff8ec; font: 700 14px system-ui, Tahoma, sans-serif; cursor: pointer; }
+  button.on { background: #e8a33d; color: #1a1410; }
+  label { display: block; margin-bottom: 12px; }
+  input[type=range] { width: 100%; }
+  pre { white-space: pre-wrap; direction: ltr; text-align: left; font-size: 12px; background: #120e0b; padding: 8px; border-radius: 8px; }
+  #view { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+  #frame { position: relative; }
+  #frame canvas, #frame img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #frame img { pointer-events: none; image-rendering: auto; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script src="../characters/sayed.js"></script>
+</head>
+<body>
+<div id="wrap">
+  <div id="side">
+    <h1>سيد فلفل — C1</h1>
+    <p>Blockout preview. Orthographic views are aligned to the approved sheet crops.</p>
+    <div class="row">
+      <button data-view="front" class="on">أمامي</button>
+      <button data-view="side">جانبي</button>
+      <button data-view="back">خلفي</button>
+      <button data-view="orbit">حر 360°</button>
+    </div>
+    <label>شفافية المرجع (reference overlay)
+      <input id="op" type="range" min="0" max="100" value="0">
+    </label>
+    <div class="row"><button id="scoreBtn">قياس التطابق</button></div>
+    <pre id="info">…</pre>
+  </div>
+  <div id="view"><div id="frame"><img id="ref" alt=""></div></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const REF = '../assets/references/3d-production/sayed/';
+// Crop geometry (px) and the figure centre used to align each orthographic view.
+const VIEWS = {
+  front: { img: 'sayed-front.png', w: 325, h: 525, cx: 162, pos: [0, 0, 10], right: [1, 0, 0] },
+  side:  { img: 'sayed-side.png',  w: 205, h: 525, cx: 96,  pos: [-10, 0, 0], right: [0, 0, 1] },
+  back:  { img: 'sayed-back.png',  w: 320, h: 525, cx: 158.5, pos: [0, 0, -10], right: [-1, 0, 0] }
+};
+const S = 1.8 / 487, GROUND = 502;
+
+const frame = document.getElementById('frame'), refImg = document.getElementById('ref'), info = document.getElementById('info');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+frame.insertBefore(renderer.domElement, refImg);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xc9c9c9);
+scene.add(new THREE.HemisphereLight(0xfff1dc, 0x6b4a2f, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-2, 4, 3); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -1.5, right: 1.5, top: 2.5, bottom: -0.5 });
+scene.add(sun);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(1.4, 48), new THREE.MeshStandardMaterial({ color: 0xbdbdbd, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+const sayed = window.AreesCharacters.createSayed(THREE);
+scene.add(sayed);
+
+// Cameras
+const ortho = new THREE.OrthographicCamera();
+const persp = new THREE.PerspectiveCamera(35, 1, 0.05, 50); persp.position.set(1.6, 1.4, 3.2);
+const controls = new OrbitControls(persp, renderer.domElement); controls.target.set(0, 0.95, 0); controls.update();
+let view = 'front';
+
+function layout() {
+  const v = VIEWS[view] || VIEWS.front;
+  const avail = document.getElementById('view').getBoundingClientRect();
+  const k = Math.min((avail.height - 24) / v.h, (avail.width - 24) / v.w);
+  frame.style.width = Math.round(v.w * k) + 'px'; frame.style.height = Math.round(v.h * k) + 'px';
+  renderer.setSize(Math.round(v.w * k), Math.round(v.h * k), false);
+  persp.aspect = v.w / v.h; persp.updateProjectionMatrix();
+}
+function setOrtho(name) {
+  const v = VIEWS[name];
+  Object.assign(ortho, { left: -v.cx * S, right: (v.w - v.cx) * S, top: GROUND * S, bottom: (GROUND - v.h) * S, near: 0.1, far: 40 });
+  ortho.position.set(...v.pos); ortho.up.set(0, 1, 0); ortho.lookAt(0, 0, 0);
+  ortho.updateProjectionMatrix();
+}
+function setView(name) {
+  view = name;
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name));
+  if (name !== 'orbit') { setOrtho(name); refImg.src = REF + VIEWS[name].img; refImg.style.display = ''; }
+  else refImg.style.display = 'none';
+  controls.enabled = name === 'orbit';
+  layout();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+document.getElementById('op').oninput = (e) => refImg.style.opacity = e.target.value / 100;
+refImg.style.opacity = 0;
+addEventListener('resize', layout);
+
+// ---- Stats ----
+function stats() {
+  let tris = 0, meshes = 0; const mats = new Set();
+  sayed.traverse(o => {
+    if (!o.isMesh) return;
+    meshes++; mats.add(o.material.uuid);
+    const g = o.geometry, t = (g.index ? g.index.count : g.attributes.position.count) / 3;
+    tris += o.isInstancedMesh ? t * o.count : t;
+  });
+  const box = new THREE.Box3().setFromObject(sayed), size = box.getSize(new THREE.Vector3());
+  return { triangles: Math.round(tris), meshes, materials: mats.size, drawCalls: renderer.info.render.calls,
+           height: +size.y.toFixed(3), width: +size.x.toFixed(3), depth: +size.z.toFixed(3),
+           parts: Object.keys(sayed.userData.parts), joints: Object.keys(sayed.userData.joints).length };
+}
+
+// ---- Silhouette match (IoU) against the reference crop. Needs http(s) for pixel access. ----
+const refMasks = {};
+function refMask(name) {
+  if (refMasks[name]) return refMasks[name];
+  return refMasks[name] = new Promise((res, rej) => {
+    const v = VIEWS[name], im = new Image();
+    im.onload = () => {
+      try {
+        const c = document.createElement('canvas'); c.width = v.w; c.height = v.h;
+        const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, v.w, v.h).data;
+        let m = new Uint8Array(v.w * v.h);
+        for (let y = 0; y < v.h; y++) {
+          let br = 0, bg = 0, bb = 0, n = 0;
+          for (const xx of [0, 1, 2, 3, 4, 5, 6, 7, v.w - 8, v.w - 7, v.w - 6, v.w - 5, v.w - 4, v.w - 3, v.w - 2, v.w - 1]) { const i = (y * v.w + xx) * 4; br += d[i]; bg += d[i + 1]; bb += d[i + 2]; n++; }
+          br /= n; bg /= n; bb /= n;
+          for (let xx = 0; xx < v.w; xx++) { const i = (y * v.w + xx) * 4; m[y * v.w + xx] = (Math.abs(d[i] - br) + Math.abs(d[i + 1] - bg) + Math.abs(d[i + 2] - bb)) > 40 ? 1 : 0; }
+        }
+        m = morph(morph(morph(morph(m, v, 1), v, 1), v, 0), v, 0);   // close small holes (2 px)
+        res(m);
+      } catch (e) { rej(e); }
+    };
+    im.onerror = rej; im.src = REF + v.img;
+  });
+}
+function morph(m, v, dilate) {
+  const o = new Uint8Array(m.length);
+  for (let y = 0; y < v.h; y++) for (let x = 0; x < v.w; x++) {
+    let r = dilate ? 0 : 1;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const yy = y + dy, xx = x + dx; const val = (yy < 0 || xx < 0 || yy >= v.h || xx >= v.w) ? 0 : m[yy * v.w + xx];
+      if (dilate) r |= val; else r &= val;
+    }
+    o[y * v.w + x] = r;
+  }
+  return o;
+}
+function modelMask(name) {
+  const v = VIEWS[name]; setOrtho(name);
+  const rt = new THREE.WebGLRenderTarget(v.w, v.h);
+  const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const bg = scene.background; scene.background = new THREE.Color(0x000000); scene.overrideMaterial = white; floor.visible = false;
+  renderer.setRenderTarget(rt); renderer.render(scene, ortho); renderer.setRenderTarget(null);
+  scene.overrideMaterial = null; scene.background = bg; floor.visible = true;
+  const px = new Uint8Array(v.w * v.h * 4); renderer.readRenderTargetPixels(rt, 0, 0, v.w, v.h, px); rt.dispose();
+  const m = new Uint8Array(v.w * v.h);
+  for (let y = 0; y < v.h; y++) for (let x = 0; x < v.w; x++) m[y * v.w + x] = px[((v.h - 1 - y) * v.w + x) * 4] > 127 ? 1 : 0;
+  if (view !== 'orbit') setOrtho(view);
+  return m;
+}
+async function score(name) {
+  const ref = await refMask(name), mod = modelMask(name);
+  let inter = 0, uni = 0;
+  for (let i = 0; i < ref.length; i++) { inter += ref[i] & mod[i]; uni += ref[i] | mod[i]; }
+  return +(inter / uni).toFixed(3);
+}
+async function scoreAll() {
+  const out = {};
+  for (const n of ['front', 'side', 'back']) { try { out[n] = await score(n); } catch { out[n] = 'n/a (open via http)'; } }
+  return out;
+}
+document.getElementById('scoreBtn').onclick = async () => { const s = await scoreAll(); render(); showInfo(s); };
+
+function showInfo(iou) {
+  const s = stats();
+  info.textContent = `version: ${sayed.userData.version}\ntriangles: ${s.triangles}\nmeshes: ${s.meshes}  materials: ${s.materials}\ndraw calls: ${s.drawCalls}\nsize (m): ${s.width} × ${s.height} × ${s.depth}\njoints: ${s.joints}\nparts: ${s.parts.join(', ')}` +
+    (iou ? `\n\nsilhouette IoU vs sheet\n front ${iou.front}\n side  ${iou.side}\n back  ${iou.back}` : '');
+}
+
+function render() { renderer.render(scene, view === 'orbit' ? persp : ortho); }
+setView('front');
+renderer.setAnimationLoop(() => { if (view === 'orbit') controls.update(); render(); });
+requestAnimationFrame(() => showInfo());
+
+window.__builder = { THREE, scene, sayed, stats, score, scoreAll, setView };
+</script>
+</body>
+</html>
