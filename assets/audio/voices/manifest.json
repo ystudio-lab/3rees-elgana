@@ -1,0 +1,63 @@
+{
+ "sayed": {
+  "intro": "assets/audio/voices/sayed/intro.wav",
+  "hit": "assets/audio/voices/sayed/hit.wav",
+  "outro_lose": "assets/audio/voices/sayed/outro_lose.wav",
+  "outro_win": "assets/audio/voices/sayed/outro_win.wav",
+  "crate": "assets/audio/voices/sayed/crate.wav",
+  "chase": "assets/audio/voices/sayed/chase.wav",
+  "pw_mahshi": "assets/audio/voices/sayed/pw_mahshi.wav",
+  "pw_tray": "assets/audio/voices/sayed/pw_tray.wav",
+  "pw_ragab": "assets/audio/voices/sayed/pw_ragab.wav"
+ },
+ "noga": {
+  "1": "assets/audio/voices/noga/1.wav",
+  "2": "assets/audio/voices/noga/2.wav",
+  "intro": "assets/audio/voices/noga/intro.wav",
+  "hit": "assets/audio/voices/noga/hit.wav",
+  "crate": "assets/audio/voices/noga/crate.wav",
+  "chase": "assets/audio/voices/noga/chase.wav",
+  "pw_mahshi": "assets/audio/voices/noga/pw_mahshi.wav",
+  "pw_tray": "assets/audio/voices/noga/pw_tray.wav",
+  "pw_ragab": "assets/audio/voices/noga/pw_ragab.wav"
+ },
+ "shawky": {
+  "1": "assets/audio/voices/shawky/1.wav",
+  "2": "assets/audio/voices/shawky/2.wav",
+  "intro": "assets/audio/voices/shawky/intro.wav",
+  "hit": "assets/audio/voices/shawky/hit.wav",
+  "crate": "assets/audio/voices/shawky/crate.wav",
+  "chase": "assets/audio/voices/shawky/chase.wav",
+  "pw_mahshi": "assets/audio/voices/shawky/pw_mahshi.wav",
+  "pw_tray": "assets/audio/voices/shawky/pw_tray.wav",
+  "pw_ragab": "assets/audio/voices/shawky/pw_ragab.wav"
+ },
+ "hankash": {
+  "1": "assets/audio/voices/hankash/1.wav",
+  "tease": "assets/audio/voices/hankash/tease.wav"
+ },
+ "kabsha": {
+  "1": "assets/audio/voices/kabsha/1.wav",
+  "2": "assets/audio/voices/kabsha/2.wav"
+ },
+ "asaliya": {
+  "1": "assets/audio/voices/asaliya/1.wav",
+  "2": "assets/audio/voices/asaliya/2.wav"
+ },
+ "faheem": {
+  "1": "assets/audio/voices/faheem/1.wav",
+  "2": "assets/audio/voices/faheem/2.wav"
+ },
+ "boga": {
+  "1": "assets/audio/voices/boga/1.wav",
+  "2": "assets/audio/voices/boga/2.wav",
+  "bogaChase": "assets/audio/voices/boga/bogaChase.wav",
+  "bogaThrow": "assets/audio/voices/boga/bogaThrow.wav",
+  "bogaDizzy": "assets/audio/voices/boga/bogaDizzy.wav",
+  "bogaDefeat": "assets/audio/voices/boga/bogaDefeat.wav",
+  "bogaHit1": "assets/audio/voices/boga/bogaHit1.wav",
+  "bogaHit2": "assets/audio/voices/boga/bogaHit2.wav",
+  "bogaEnter": "assets/audio/voices/boga/bogaEnter.wav",
+  "bogaMiss": "assets/audio/voices/boga/bogaMiss.wav"
+ }
+}
