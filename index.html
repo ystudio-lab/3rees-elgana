@@ -1979,6 +1979,7 @@ const camera = new THREE.PerspectiveCamera(CAMERA.fov, 9 / 16, 0.1, 200);
 // ---- Lighting (single setup) ----
 const hemi = new THREE.HemisphereLight(0xcfe0ff, 0x8a5c36, 1.2); scene.add(hemi);            // M15: cool sky vs warm bounce = more depth in the shade
 const rim = new THREE.DirectionalLight(0xffb36b, 0.55); rim.position.set(5, 6, -14); scene.add(rim);   // warm back light: edges of Sayed and crates pop from the street
+const SUNOFF = { x: -6, y: 14 };
 const sun = new THREE.DirectionalLight(0xffe6c2, 1.9);
 sun.position.set(-6, 14, 6);
 sun.castShadow = true;
@@ -3212,7 +3213,7 @@ function updateNpcs(t, dt) {
     if (playing && !u.triggered && dz > NEAR.from && dz < NEAR.to) {                // Sayed approaches: react + speak
       u.triggered = true; u.reactUntil = t + NEAR.bubbleTime;
       const all = NPC_TALK[u.id].lines, lines = SEL.char === 'sayed' ? all : all.filter(l => !l.includes('سيد'));   // lines addressed to Sayed only when playing Sayed
-      const k = u.line++ % lines.length, text = lines[k]; u.bubble.textContent = text; u.reactUntil = t + Math.max(NEAR.bubbleTime, text.length * 0.065);
+      if (STAGE.n === 1 && u.line >= lines.length) { u.reactUntil = t + 1.2; continue; } const k = u.line++ % lines.length, text = lines[k]; u.bubble.textContent = text; u.reactUntil = t + Math.max(NEAR.bubbleTime, text.length * 0.065);
       SFX.talk(); speak(u.id, u.id + '_' + (all.indexOf(text) + 1), text);
     }
     if (c.visible) window.AreesCast.animate(c, npcMode(c, t), t + u.phase, dt);
@@ -4449,7 +4450,7 @@ function show(mode) {
 }
 const go = (mode) => { if (ui.mode !== mode) nav.push(ui.mode); show(mode); };
 const back = () => show(nav.pop() || 'menu');
-function startMission() { STAGE.n = SEL.level; applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12) heroSay('start', 0.6); }
+function startMission() { STAGE.n = SEL.level; s02Apply(STAGE.n); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
 function goMenu() { stopVoice(); STAGE.n = 1; BOSS_CFG.hp = 3; setBossModel(false); setObstacleSkin('market'); restart(); nav.length = 0; ui.runActive = false; show('menu'); }
 function pauseGame() { if (ui.mode === 'playing' && !state.over) { stopVoice(); show('pause'); } }
 function resumeGame() { if (ui.mode === 'pause') { clock.getDelta(); show('playing'); } } // drop paused time
@@ -4550,14 +4551,16 @@ const STAGE_CAST = { 1: ['noga', 'shawky', 'asaliya', 'kabsha', 'faheem'] };   /
 for (const c of CHARS) c.built = c.playable; for (const l of LEVELS) l.built = !!l.playable;
 if (TESTING.unlockAll) { for (const c of CHARS) c.playable = true; for (const l of LEVELS) l.playable = true; }
 const STAGE_THEME = {   // atmosphere per documented area (sky, fog, fog range, sun colour, sun power, hemisphere sky/ground)
-  1: [0xf2c48d, 35, 90, 0xffe6c2, 1.9, 0xcfe0ff, 0x8a5c36], 2: [0x3a4a48, 20, 66, 0xbfe8e0, 1.0, 0x9fd0c8, 0x2c2a24], 3: [0xe8a96a, 35, 92, 0xffd9a0, 1.9, 0xd8e0ff, 0x8a5c36],
+  1: [0xf2bd80, 32, 92, 0xffd9a6, 2.05, 0xd2e0ff, 0x9a6234], 2: [0x3a4a48, 20, 66, 0xbfe8e0, 1.0, 0x9fd0c8, 0x2c2a24], 3: [0xe8a96a, 35, 92, 0xffd9a0, 1.9, 0xd8e0ff, 0x8a5c36],
   4: [0xcbbda6, 26, 76, 0xfff0d8, 1.6, 0xd8d8e0, 0x6e6458], 5: [0xa6a0cf, 60, 195, 0xffb88a, 1.7, 0xb8c0ff, 0x7a5a60], 6: [0xffa860, 34, 96, 0xff9a4a, 2.0, 0xffd8b0, 0x8a4a2a],
   7: [0x1b2038, 30, 84, 0xff9a50, 1.1, 0x6070a0, 0x302018], 8: [0xc88a4a, 28, 78, 0xffc070, 1.8, 0xe8c898, 0x6a3a1a], 9: [0xf3dcae, 45, 120, 0xfff2d0, 2.0, 0xe8f0ff, 0xa88a5a],
   10: [0xe8744a, 44, 130, 0xffc48a, 1.9, 0xffd8c0, 0x8a5a3a],
   11: [0xf0b27a, 40, 112, 0xffd39a, 1.95, 0xdde4ff, 0x8a5c36],
   12: [0x0a0f22, 14, 62, 0x9ab4ff, 0.85, 0x6a7cb8, 0x241c18] };
 function applyStageTheme(n) { const th = STAGE_THEME[n] || STAGE_THEME[1]; scene.background.set(th[0]); scene.fog.color.set(th[0]); scene.fog.near = th[1]; scene.fog.far = th[2];
-  sun.color.set(th[3]); sun.intensity = th[4]; hemi.color.set(th[5]); hemi.groundColor.set(th[6]); }
+  sun.color.set(th[3]); sun.intensity = th[4]; hemi.color.set(th[5]); hemi.groundColor.set(th[6]);
+  SUNOFF.x = n === 1 ? -9 : -6; SUNOFF.y = n === 1 ? 10.5 : 14;                    // M01 only: lower golden-hour sun = longer, softer-looking shadows
+}
 const castReport = () => { const ids = [SEL.char]; npcs.forEach(c => c.visible && ids.push(c.userData.id)); if (bossModel.visible) ids.push('boga'); if (hankash.visible) ids.push('hankash'); return ids; };
 // Vehicles from docs/04 §3 — shown only for missions that need one (05–07, all still locked). No vehicle gameplay is implemented.
 const RIDES = [
@@ -4656,9 +4659,9 @@ const GLB_CLIP = { idle: 'Idle', run: 'Run', jump: 'Jump', slide: 'Slide', wave:
 const GLB_ONCE = new Set(['jump', 'slide', 'defeat']);
 const GLB_REQUIRED = ['idle', 'run', 'jump', 'slide'];
 // M19: which GLB (if any) replaces the procedural Sayed.  ?glb=saeed | ?glb=sayed (old M18 file) | ?glb=off (force procedural). SAEED_DEFAULT decides the no-flag behaviour.
-const SAEED_DEFAULT = true;      // Saeed.glb is Sayed's default look; ?glb=off (or localStorage.areesGLB='off') forces the original procedural Sayed, which is also the automatic fallback
+const SAEED_DEFAULT = false;      // Saeed.glb is Sayed's default look; ?glb=off (or localStorage.areesGLB='off') forces the original procedural Sayed, which is also the automatic fallback
 GLB.kind = 'off';
-try { const q = (location.search.match(/[?&]glb=(\w+)/) || [])[1] || localStorage.getItem('areesGLB') || ''; GLB.kind = q === 'off' ? 'off' : q === 'sayed' ? 'old' : (q === 'saeed' || SAEED_DEFAULT) ? 'saeed' : 'off'; } catch {}
+try { const q = (location.search.match(/[?&]glb=(\w+)/) || [])[1] || localStorage.getItem('areesGLB') || ''; GLB.kind = 'off'; void q; } catch {}   // Saeed.glb / old sayed.glb are disabled for now (files kept); the original procedural Sayed is always used
 GLB.enabled = GLB.kind !== 'off'; if (GLB.kind === 'saeed') GLB.url = 'assets/characters/sayed/saeed.glb';
 (() => {                                                                  // route GLB characters through an AnimationMixer; procedural ones are untouched
   const orig = window.AreesCast.animate;
@@ -4718,9 +4721,9 @@ function glbBuild(gltf) {
 const SAEED_MAP = { hips: 'DEF-spine', torso: 'DEF-spine.001', head: 'DEF-spine.006', armL: 'DEF-upper_arm.L', armR: 'DEF-upper_arm.R', foreL: 'DEF-forearm.L', foreR: 'DEF-forearm.R', legL: 'DEF-thigh.L', legR: 'DEF-thigh.R', shinL: 'DEF-shin.L', shinR: 'DEF-shin.R' };
 const SAEED_ORDER = ['hips', 'torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
 const gltfName = n => n.replace(/\s/g, '_').replace(/[\[\].:\/]/g, '');          // GLTFLoader strips . : / [ ] from node names
-function saeedBuild(gltf) {
+function saeedBuild(gltf, map = SAEED_MAP, fitH = 0) {
   const scene = gltf.scene, errs = [], bones = {};
-  for (const k of SAEED_ORDER) { const b = scene.getObjectByName(gltfName(SAEED_MAP[k])); if (!b) errs.push('missing bone ' + SAEED_MAP[k]); else bones[k] = b; }
+  for (const k of SAEED_ORDER) { const b = scene.getObjectByName(gltfName(map[k])); if (!b) errs.push('missing bone ' + map[k]); else bones[k] = b; }
   if (errs.length) throw new Error(errs.join('; '));
   scene.updateMatrixWorld(true);
   const V = (...a) => new THREE.Vector3(...a), rest = {}, pos = {};
@@ -4743,6 +4746,7 @@ function saeedBuild(gltf) {
   let tris = 0; const mats = new Set(); let meshes = 0;
   scene.traverse(o => { if (!o.isMesh) return; meshes++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; mats.add(o.material); o.frustumCulled = false; o.onBeforeRender = sync; });
   for (const m of mats) { m.metalness = 0; m.metalnessMap = null; if (m.transparent) { m.transparent = false; m.alphaTest = 0.35; } m.depthWrite = true; m.needsUpdate = true; }   // no env map in this scene: metalness=1 from the ORM map renders black; BLEND -> alpha-test (cheaper, no sort issues)
+  if (fitH) { const b0 = new THREE.Box3().setFromObject(scene); scene.scale.setScalar(fitH / (b0.max.y - b0.min.y)); scene.updateMatrixWorld(true); }
   const box = new THREE.Box3().setFromObject(scene), h = box.max.y - box.min.y; if (Math.abs(h - 1.9) > 0.15) warn.push('height ' + h.toFixed(2) + ' m (spec 1.90)'); if (Math.abs(box.min.y) > 0.05) warn.push('feet not at y=0 (' + box.min.y.toFixed(3) + ')'); if (tris > 12000) warn.push('triangles ' + Math.round(tris) + ' > 12000 (M18 budget)');
   root.userData = { id: 'sayed', name: 'سيد فلفل', joints: J, triangles: tris, base: { hipY: hipBase, lean: 0 }, headTopLocal: box.max.y - pos.head.y, saeed: { sync, bones, J, base, rest } };
   GLB.info = { kind: 'saeed', height: +h.toFixed(3), triangles: Math.round(tris), meshes, materials: mats.size, bones: Object.keys(bones).length, clips: [], warnings: warn };
@@ -4765,6 +4769,24 @@ async function loadSayedGLB() {
   return GLB;
 }
 if (GLB.enabled) loadSayedGLB();
+// ---- Saeed_felfal_02 (Sayed candidate): used ONLY in M01 gameplay. Everything else keeps the original procedural Sayed (the model stays loaded in memory only for M01).
+// Mixamo-style rig driven by the same procedural pose proxies as before. Disabled with ?s02=off. The first Saeed.glb stays disabled (GLB.kind = 'off').
+const SAEED02_MAP = { hips: 'Hips', torso: 'Spine', head: 'Head', armL: 'LeftArm', armR: 'RightArm', foreL: 'LeftForeArm', foreR: 'RightForeArm', legL: 'LeftUpLeg', legR: 'RightUpLeg', shinL: 'LeftLeg', shinR: 'RightLeg' };
+const S02 = { on: !/[?&]s02=off\b/.test(location.search), url: 'assets/characters/sayed/saeed_felfal_02.glb', state: 'off', model: null, errs: [], info: null };
+async function loadS02() {
+  if (!S02.on || S02.state !== 'off') return; S02.state = 'loading';
+  try { const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js'); const gl = await new GLTFLoader().loadAsync(S02.url);
+    const ref = new THREE.Box3().setFromObject(window.AreesCast.create(THREE, 'sayed')), fit = (ref.max.y - ref.min.y);
+    S02.model = saeedBuild(gl, SAEED02_MAP, fit); S02.info = GLB.info; S02.info.kind = 's02'; S02.state = 'loaded'; }
+  catch (e) { S02.state = 'fallback'; S02.errs.push(String(e && e.message || e)); }
+}
+function s02Apply(n) {                                                   // called at mission start only (never mid-run)
+  if (SEL.char !== 'sayed') return;
+  const want = n === 1 && S02.model ? S02.model : heroModels.sayed; if (!want || want === sayed) return;
+  const yaw = sayed.rotation.y; player.remove(sayed); sayed = want; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed);
+}
+if (S02.on) setTimeout(loadS02, 1500);
+
 function charThumb(id) {
   return (THUMB['c_' + id] ||= (() => { const m = heroModel(id); window.AreesCast.animate(m, 'idle', 0, 0);
     return objectThumb(m, 120, 150, { dist: 2.15, fov: 26, x: 0.35, up: 0.1, yaw: -0.25, centerY: b => b.max.y - 0.42 }); })());
@@ -5683,9 +5705,10 @@ const HERO_LINES = {
             crate: ['شكلها خطة! الصندوق ده كان جزء منها.'], chase: ['بؤجة! قلتلك فيه خطة... بس مش خطتي!'], pw_mahshi: ['أنا دلوقتي دبابة... دبابة محشي!'], pw_tray: ['ده مش جري... ده طيران!'], pw_ragab: ['أم رجب معانا؟ يبقى أنا شجاع!'] }
 };
 const heroBubble = document.createElement('div'); heroBubble.className = 'bubble hero'; bubbleLayer.appendChild(heroBubble);
-const heroTalk = { until: 0, cooldown: 0, pending: null };
+const heroTalk = { until: 0, cooldown: 0, pending: null }; const M1S = { opened: false, said: {} };   // M01 only: opening already used the 'start' line; hit/crate/chase barks happen once per run
 function heroSay(event, delay = 0) {
   const lines = (HERO_LINES[SEL.char] || {})[event]; if (!lines) return;
+  if (STAGE.n === 1 && (event === 'hit' || event === 'crate' || event === 'chase')) { if (M1S.said[event]) { if (event === 'hit') playVoice(SEL.char, 'hit'); return; } M1S.said[event] = 1; }
   const now = clock.elapsedTime; if (event === 'hit' && now < heroTalk.cooldown) { playVoice(SEL.char, 'hit'); return; }   // M13: bubble rate-limited, recorded 'hit' still plays
   const text = lines[Math.floor(Math.random() * lines.length)];
   const go2 = () => { heroBubble.textContent = text; heroTalk.until = clock.elapsedTime + Math.max(2.4, text.length * 0.07); heroTalk.cooldown = clock.elapsedTime + 8; speak(SEL.char, SEL.char + '_' + event, text); };
@@ -5899,7 +5922,7 @@ function lobbyCamera(dt, time) {
   else { lobbyPos.set(Math.sin(time * 0.2) * 0.9, 1.25, z + 6.6); lobbyLook.set(0, 0.55, z); }
   const k = 1 - Math.exp(-3.5 * dt);
   camera.position.lerp(lobbyPos, k); lookCurrent.lerp(lobbyLook, k); camera.lookAt(lookCurrent);
-  sun.position.set(-6, 14, z + 6); sun.target.position.set(0, 0, z);
+  sun.position.set(SUNOFF.x, SUNOFF.y, z + 6); sun.target.position.set(0, 0, z);
 }
 function updateCamera(dt, snap = false) {
   // Follow x partially and ignore jump height, so the frame stays steady.
@@ -5912,7 +5935,7 @@ function updateCamera(dt, snap = false) {
   lookCurrent.lerp(lookTarget, t);
   camera.lookAt(lookCurrent);
   // Keep the shadow area centered on the player.
-  sun.position.set(player.position.x - 6, 14, player.position.z + 6);
+  sun.position.set(player.position.x + SUNOFF.x, SUNOFF.y, player.position.z + 6);
   sun.target.position.copy(player.position);
 }
 
@@ -7766,9 +7789,9 @@ const CINE_SCENES = {
       { who: 'sayed', ev: 'outro_win', ar: 'أنا مش متأخر... أنا بس بوصل في التوقيت الدرامي!', en: "I'm not late... I just arrive at the dramatic moment!", pause: 0.5, pose: 'cheer', emo: 'smirk', react: 'nod', shot: { a: [2.6, 1.5, 3.6, 0.1, 1.2, 0], b: [1.9, 1.5, 2.6, -0.3, 1.25, 0], fov: 46 } },
       { who: 'shawky', ev: '1', ar: 'أنا معاك يا سيد... بس من بعيد شوية.', en: "I'm with you, Sayed... just from a bit of a distance.", pause: 0.35, pose: 'talk', emo: 'worry', react: 'smirk', stepBack: 0.55, shot: { a: [-1.3, 1.75, 1.7, 0.75, 1.7, 0], b: [-1.1, 1.8, 1.5, 0.85, 1.72, 0], fov: 34 } },
       { who: 'sayed', ev: 'chase', ar: 'بؤجة؟! ده راجل حنكش!', en: "Bo'ga?! He's Hankash's man!", pause: 0.3, pose: 'talk', emo: 'gasp', react: 'gasp', shot: { a: [1.2, 1.62, 1.1, -0.85, 1.6, 0], b: [1.0, 1.6, 0.9, -0.85, 1.6, 0], fov: 30 } },
-      { who: 'shawky', ev: 'chase', ar: 'بؤجة! قلتلك فيه خطة... بس مش خطتي!', en: "Bo'ga! I told you there's a plan... just not mine!", pause: 0, pose: 'talk', emo: 'worry', react: 'wince', interrupt: true, shot: { a: [-0.9, 1.7, 1.6, 0.95, 1.7, 0], b: [-1.5, 1.7, 1.9, 0.9, 1.7, 0], fov: 34 } },
-      { who: 'sayed', ev: 'intro', ar: 'الفرح ده هيتم، حتى لو اتجوزت في الإسعاف!', en: 'This wedding is happening — even if I get married in an ambulance!', pause: 0.45, pose: 'cheer', emo: '', react: 'worry', shot: { a: [1.4, 1.1, 2.4, -0.85, 1.6, 0], b: [1.1, 1.25, 2.0, -0.85, 1.65, 0], fov: 40 } },
-      { who: 'shawky', ev: 'hit', ar: 'إحنا لو نجينا من دي، أنا هعتزل المصايب. مؤقتاً.', en: "If we survive this one, I'm retiring from disasters. Temporarily.", pause: 0.3, pose: 'talk', emo: 'sigh', react: 'nod', shot: { a: [-1.2, 1.7, 1.5, 0.9, 1.72, 0], b: [-1.0, 1.75, 1.3, 0.9, 1.74, 0], fov: 32 } } ],
+      { who: 'shawky', ev: 'chase', ar: 'بؤجة! قلتلك فيه خطة... بس مش خطتي!', en: "Bo'ga! I told you there's a plan... just not mine!", pause: 0, pose: 'talk', emo: 'worry', react: 'wince', interrupt: true, shot: { a: [-1.6, 1.0, 2.4, 0.85, 1.6, 0], b: [-1.2, 1.15, 2.0, 0.85, 1.65, 0], fov: 38 } },
+      { who: 'sayed', ev: 'hit', ar: 'يا جماعة اهدوا، أنا مسيطر... تقريباً.', en: "Easy, everyone, I'm in control... mostly.", pause: 0.45, pose: 'cheer', emo: 'worry', react: 'worry', shot: { a: [1.4, 1.1, 2.4, -0.85, 1.6, 0], b: [1.1, 1.25, 2.0, -0.85, 1.65, 0], fov: 40 } },
+      { who: 'shawky', ev: 'hit', ar: 'إحنا لو نجينا من دي، أنا هعتزل المصايب. مؤقتاً.', en: "If we survive this one, I'm retiring from disasters. Temporarily.", pause: 0.3, pose: 'talk', emo: 'sigh', react: 'nod', shot: { a: [0.2, 2.1, 3.0, 0.1, 1.4, 0], b: [0.4, 1.9, 2.4, 0.4, 1.5, 0], fov: 40 } } ],
     cap: { ar: 'بدلة الفرح اختفت وسط الزحمة… والأثر بيودّي على محطة المترو.', en: 'The wedding suit vanished in the crowd — and the trail leads to the Metro station.' },
     outro: { a: [3.4, 1.7, 4.6, 0, 1.2, 0], b: [4.6, 2.6, 8.2, 0, 1.3, -3], fov: 46 } } };
 Object.assign(CINE_NAME, { noga: ['نوجة', 'Noga', '#FF6FAE'], hankash: ['حنكش باشا', 'Hankash Pasha', '#B8322C'] });
@@ -7807,7 +7830,14 @@ Object.assign(CINE_NAME, { noga: ['نوجة', 'Noga', '#FF6FAE'], hankash: ['ح�
   const PLAN = { 1: ['noga', [['noga', 'n1'], ['sayed', 'intro']]], 2: ['shawky', [['sayed', 'hit'], ['shawky', 'hit']]], 3: ['noga', [['noga', 'n2'], ['sayed', 'intro']]], 4: ['shawky', [['shawky', 's2'], ['sayed', 'hit']]],
     5: ['noga', [['noga', 'hit'], ['sayed', 'win']]], 6: ['shawky', [['shawky', 's1'], ['sayed', 'hit']]], 7: ['noga', [['noga', 'n1'], ['sayed', 'lose']]], 8: ['hankash', [['hankash', 'h1'], ['sayed', 'hit']]],
     9: ['shawky', [['sayed', 'intro'], ['shawky', 'hit']]], 10: ['hankash', [['hankash', 'tease'], ['sayed', 'intro']]], 11: ['noga', [['noga', 'n1'], ['sayed', 'win']]] };
-  for (const n in PLAN) { const [partner, bs] = PLAN[n], far = partner === 'hankash', S = STORY[n];
+  { const S = STORY[1], on = (x, k) => ({ a: [x + 0.6 * k, 1.7, 1.7, x, 1.65, 0], b: [x + 0.45 * k, 1.72, 1.45, x, 1.67, 0], fov: 34 });   // M01 opening: Noga sets the deadline, Sayed answers, Shawky offers a plan — three faces, three different shots
+    CINE_SCENES.o1 = { id: 'open1', env: 1, restore: 1, pz: -2.2, auto: true, open: { ar: S.recap[0], en: S.recap[1] }, extras: () => [],
+      actors: { sayed: { x: -1.25, face: 1.0 }, noga: { x: 0, face: -0.35 }, shawky: { x: 1.25, face: -1.2 } },
+      beats: [ { who: 'noga', ev: '1', ar: L.noga.n1[1], en: L.noga.n1[2], pause: 0.3, pose: 'talk', emo: 'worry', react: 'wince', shot: on(0, 1) },
+               { who: 'sayed', ev: 'intro', ar: L.sayed.intro[1], en: L.sayed.intro[2], pause: 0.35, pose: 'cheer', emo: '', react: 'worry', shot: { a: [-0.2, 1.5, 2.6, -1.25, 1.45, 0], b: [-0.45, 1.52, 2.2, -1.25, 1.5, 0], fov: 36 } },
+               { who: 'shawky', ev: '2', ar: L.shawky.s2[1], en: L.shawky.s2[2], pause: 0.3, pose: 'talk', emo: 'smirk', react: 'nod', shot: on(1.25, -0.6) } ],
+      cap: { ar: S.recap[0], en: S.recap[1] }, outro: { a: [0, 1.7, 5.2, 0, 1.2, 0], b: [0.8, 2.0, 7.2, 0.5, 1.3, -2], fov: 46 } }; }
+  for (const n in PLAN) { if (n === '1') continue; const [partner, bs] = PLAN[n], far = partner === 'hankash', S = STORY[n];
     CINE_SCENES['o' + n] = { id: 'open' + n, env: +n, restore: +n, pz: -2.2, auto: true, open: { ar: S.recap[0], en: S.recap[1] }, extras: (pz) => [],
       actors: far ? { sayed: { x: -0.85, face: 1.25 }, shawky: { x: 0.85, face: -1.25 }, hankash: { x: 0.2, z: -4.6, face: 0, far: true } } : { sayed: { x: -0.85, face: 1.25 }, [partner]: { x: 0.85, face: -1.25 } },
       beats: bs.map(([who, k], i) => { const d = L[who][k], sh = who === 'sayed' ? (i % 2 ? SAY1 : SAY2) : who === 'hankash' ? HK : (i % 2 ? SHA2 : SHA);
@@ -7887,7 +7917,7 @@ async function cineRun(tok, S) {
 function cineFinish(skipped) {
   if (!CINE.on) return; const tok = ++CINE.tok; void tok; CINE.on = false; if (skipped) CINE.stats.skipped++; cineStopAudio();
   for (const id in CINE.actors) { CINE.actors[id].visible = false; CINE.actors[id].parent && scene.remove(CINE.actors[id]); }
-  sayed.visible = CINE.sayedVis !== false; camera.fov = CINE.fov0 || 60; camera.updateProjectionMatrix(); try { if (CINE.extras) { for (const o of CINE.extras) scene.remove(o); CINE.extras = null; } applyStageTheme(CINE.restoreEnv || 1); setEnvStyle(CINE.restoreEnv || 1); } catch {}
+  if (CINE.scene && CINE.scene.id === 'open1') M1S.opened = true; sayed.visible = CINE.sayedVis !== false; camera.fov = CINE.fov0 || 60; camera.updateProjectionMatrix(); try { if (CINE.extras) { for (const o of CINE.extras) scene.remove(o); CINE.extras = null; } applyStageTheme(CINE.restoreEnv || 1); setEnvStyle(CINE.restoreEnv || 1); } catch {}
   cineEl.classList.remove('end'); cineSubEl.hidden = true; cineCapEl.hidden = true; const th = CINE.then; CINE.then = null; CINE.cur = null;
   if (th) th(); else show('menu');
 }
@@ -8008,7 +8038,7 @@ async function beginMissionFlow() {
     await fWait(Math.max(0, 900 - (performance.now() - t0))); fBar('lvlBar', 1, t('ldReady')); await fWait(200);
     fStep('intro');
     if (l.n === 1 && SEL.char === 'sayed' && !introSeen()) {                                      // first ever run: the opening cinematic is the mission intro (skippable)
-      started = true; startIntro(false); INTRO.then = () => startMission(); fHide(ov); fStep(null);
+      started = true; startIntro(false); INTRO.then = () => { if (!cineStart('o1', () => startMission())) startMission(); }; fHide(ov); fStep(null);
     } else {
       if (CINE_SCENES['o' + l.n] && !/[?&]cine=0\b/.test(location.search)) { started = true; fHide(ov); fStep(null); if (!cineStart('o' + l.n, () => startMission())) startMission(); return; }
       const el = await missionCard(l); started = true;
@@ -8022,7 +8052,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__arees = { CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__arees = { S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
