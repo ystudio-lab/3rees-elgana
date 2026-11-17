@@ -4614,11 +4614,15 @@ const GLB_BONES = ['hips', 'torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'l
 const GLB_CLIP = { idle: 'Idle', run: 'Run', jump: 'Jump', slide: 'Slide', wave: 'Wave', cheer: 'Cheer', talk: 'Talk', defeat: 'Defeat' };
 const GLB_ONCE = new Set(['jump', 'slide', 'defeat']);
 const GLB_REQUIRED = ['idle', 'run', 'jump', 'slide'];
-try { GLB.enabled = /[?&]glb=sayed\b/.test(location.search) || localStorage.getItem('areesGLB') === 'sayed'; } catch {}
+// M19: which GLB (if any) replaces the procedural Sayed.  ?glb=saeed | ?glb=sayed (old M18 file) | ?glb=off (force procedural). SAEED_DEFAULT decides the no-flag behaviour.
+const SAEED_DEFAULT = true;      // Saeed.glb is Sayed's default look; ?glb=off (or localStorage.areesGLB='off') forces the original procedural Sayed, which is also the automatic fallback
+GLB.kind = 'off';
+try { const q = (location.search.match(/[?&]glb=(\w+)/) || [])[1] || localStorage.getItem('areesGLB') || ''; GLB.kind = q === 'off' ? 'off' : q === 'sayed' ? 'old' : (q === 'saeed' || SAEED_DEFAULT) ? 'saeed' : 'off'; } catch {}
+GLB.enabled = GLB.kind !== 'off'; if (GLB.kind === 'saeed') GLB.url = 'assets/characters/sayed/saeed.glb';
 (() => {                                                                  // route GLB characters through an AnimationMixer; procedural ones are untouched
   const orig = window.AreesCast.animate;
   window.AreesCast.animate = function (ch, mode, t, dt = 0.016) {
-    const g = ch && ch.userData && ch.userData.glb; if (!g) return orig(ch, mode, t, dt);
+    const g = ch && ch.userData && ch.userData.glb; if (!g) { orig(ch, mode, t, dt); if (ch && ch.userData && ch.userData.saeed) ch.userData.saeed.sync(); return; }
     const act = g.actions[mode] || g.actions.idle;
     if (g.cur !== act) { const prev = g.cur; g.cur = act; for (const a of g.list) if (a !== act && a !== prev) a.stop(); act.reset(); act.setEffectiveWeight(1); act.play(); if (prev && prev !== act) act.crossFadeFrom(prev, prev === g.actions.idle ? 0.18 : 0.12, false); }
     g.mixer.update(dt);
@@ -4667,15 +4671,54 @@ function glbBuild(gltf) {
   window.AreesCast.animate(root, 'idle', 0, 0);
   return root;
 }
+// ---- M19: Saeed.glb (Rigify skeleton, NO embedded clips). The game's own procedural pose math (AreesCast.animate) keeps driving hidden "pose proxies"
+// (hips/torso/head/arms/forearms/legs/shins); every frame their world rotations are retargeted onto the Rigify DEF bones. Result: every gameplay state
+// (run/jump/slide/idle/wave/cheer/talk/defeat, ride poses, M12 attacks) works with no authored clips. T-pose arms are lowered to an A-pose rest first.
+const SAEED_MAP = { hips: 'DEF-spine', torso: 'DEF-spine.001', head: 'DEF-spine.006', armL: 'DEF-upper_arm.L', armR: 'DEF-upper_arm.R', foreL: 'DEF-forearm.L', foreR: 'DEF-forearm.R', legL: 'DEF-thigh.L', legR: 'DEF-thigh.R', shinL: 'DEF-shin.L', shinR: 'DEF-shin.R' };
+const SAEED_ORDER = ['hips', 'torso', 'head', 'armL', 'armR', 'foreL', 'foreR', 'legL', 'legR', 'shinL', 'shinR'];
+const gltfName = n => n.replace(/\s/g, '_').replace(/[\[\].:\/]/g, '');          // GLTFLoader strips . : / [ ] from node names
+function saeedBuild(gltf) {
+  const scene = gltf.scene, errs = [], bones = {};
+  for (const k of SAEED_ORDER) { const b = scene.getObjectByName(gltfName(SAEED_MAP[k])); if (!b) errs.push('missing bone ' + SAEED_MAP[k]); else bones[k] = b; }
+  if (errs.length) throw new Error(errs.join('; '));
+  scene.updateMatrixWorld(true);
+  const V = (...a) => new THREE.Vector3(...a), rest = {}, pos = {};
+  for (const k of SAEED_ORDER) { rest[k] = bones[k].getWorldQuaternion(new THREE.Quaternion()); pos[k] = bones[k].getWorldPosition(V()); }
+  const warn = []; if (!(pos.armR.x < pos.armL.x)) errs.push('left/right swapped (expected character-right at -X)'); if (errs.length) throw new Error(errs.join('; '));
+  const toe = scene.getObjectByName(gltfName('DEF-toe.L')), foot = scene.getObjectByName(gltfName('DEF-foot.L')); if (toe && foot && !(toe.getWorldPosition(V()).z > foot.getWorldPosition(V()).z)) warn.push('model may face -Z');
+  const base = {}, ID = new THREE.Quaternion(), down = V(0, -1, 0);
+  for (const s of ['L', 'R']) { const d = pos['fore' + s].clone().sub(pos['arm' + s]).normalize(), q = new THREE.Quaternion().setFromUnitVectors(d, down); base['arm' + s] = q; base['fore' + s] = q; }   // T-pose -> arms hanging (procedural rest)
+  const prox = new THREE.Group(); prox.name = 'saeed-pose-proxies'; const J = {}, hp = pos.hips;
+  const mk = (n, parent, p) => { const g = new THREE.Group(); g.name = n; g.position.copy(p); parent.add(g); J[n] = g; return g; };
+  mk('hips', prox, hp); mk('torso', J.hips, V()); mk('head', J.torso, pos.head.clone().sub(hp));
+  for (const s of ['L', 'R']) { mk('arm' + s, J.torso, pos['arm' + s].clone().sub(hp)); mk('fore' + s, J['arm' + s], V(0, -pos['fore' + s].distanceTo(pos['arm' + s]), 0)); mk('leg' + s, J.hips, pos['leg' + s].clone().sub(hp)); mk('shin' + s, J['leg' + s], V(0, -pos['shin' + s].distanceTo(pos['leg' + s]), 0)); }
+  const root = new THREE.Group(), pose = new THREE.Group(); pose.name = 'pose'; root.add(pose); pose.add(scene); pose.add(prox);
+  const tmp = new THREE.Quaternion(), pq = new THREE.Quaternion(); const hipBase = hp.y;
+  const sync = () => {
+    scene.position.y = J.hips.position.y - hipBase; root.updateMatrixWorld(true);
+    for (const k of SAEED_ORDER) { const b = bones[k]; b.parent.updateWorldMatrix(true, false); b.parent.getWorldQuaternion(pq); J[k].getWorldQuaternion(tmp); tmp.multiply(base[k] || ID).multiply(rest[k]); b.quaternion.copy(pq.invert()).multiply(tmp); b.updateMatrix(); }
+    scene.updateMatrixWorld(true);
+  };
+  let tris = 0; const mats = new Set(); let meshes = 0;
+  scene.traverse(o => { if (!o.isMesh) return; meshes++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; mats.add(o.material); o.frustumCulled = false; o.onBeforeRender = sync; });
+  for (const m of mats) { m.metalness = 0; m.metalnessMap = null; if (m.transparent) { m.transparent = false; m.alphaTest = 0.35; } m.depthWrite = true; m.needsUpdate = true; }   // no env map in this scene: metalness=1 from the ORM map renders black; BLEND -> alpha-test (cheaper, no sort issues)
+  const box = new THREE.Box3().setFromObject(scene), h = box.max.y - box.min.y; if (Math.abs(h - 1.9) > 0.15) warn.push('height ' + h.toFixed(2) + ' m (spec 1.90)'); if (Math.abs(box.min.y) > 0.05) warn.push('feet not at y=0 (' + box.min.y.toFixed(3) + ')'); if (tris > 12000) warn.push('triangles ' + Math.round(tris) + ' > 12000 (M18 budget)');
+  root.userData = { id: 'sayed', name: 'سيد فلفل', joints: J, triangles: tris, base: { hipY: hipBase, lean: 0 }, headTopLocal: box.max.y - pos.head.y, saeed: { sync, bones, J, base, rest } };
+  GLB.info = { kind: 'saeed', height: +h.toFixed(3), triangles: Math.round(tris), meshes, materials: mats.size, bones: Object.keys(bones).length, clips: [], warnings: warn };
+  window.AreesCast.animate(root, 'idle', 0, 0);
+  return root;
+}
 async function loadSayedGLB() {
   if (!GLB.enabled || GLB.state !== 'off') return GLB;
   GLB.state = 'loading';
   try {
     const head = await fetch(GLB.url, { method: 'HEAD' }); if (!head.ok) throw new Error('no GLB at ' + GLB.url + ' (HTTP ' + head.status + ')');
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
-    const model = glbBuild(await new GLTFLoader().loadAsync(GLB.url));
-    const old = heroModels.sayed, active = old === sayed; heroModels.sayed = model; delete THUMB.c_sayed;
-    if (active) { const yaw = sayed.rotation.y; player.remove(sayed); sayed = model; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed); }
+    const gl = await new GLTFLoader().loadAsync(GLB.url), model = GLB.kind === 'saeed' ? saeedBuild(gl) : glbBuild(gl);
+    const old = heroModels.sayed; heroModels.sayed = model; delete THUMB.c_sayed;
+    const swap = () => { if (ui.mode === 'playing' || GM.on) return void setTimeout(swap, 700);       // never swap the hero in the middle of a run (attached items live on the old model)
+      if (sayed === old) { const yaw = sayed.rotation.y; player.remove(sayed); sayed = model; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed); } };
+    swap();
     GLB.state = 'loaded';
   } catch (e) { GLB.state = 'fallback'; GLB.errs.push(String(e && e.message || e)); }
   return GLB;
