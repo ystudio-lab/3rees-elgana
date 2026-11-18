@@ -4769,23 +4769,26 @@ async function loadSayedGLB() {
   return GLB;
 }
 if (GLB.enabled) loadSayedGLB();
-// ---- Saeed_felfal_02 (Sayed candidate): used ONLY in M01 gameplay. Everything else keeps the original procedural Sayed (the model stays loaded in memory only for M01).
-// Mixamo-style rig driven by the same procedural pose proxies as before. Disabled with ?s02=off. The first Saeed.glb stays disabled (GLB.kind = 'off').
+// ---- Saeed_felfal_02: the ONLY active Sayed model (menus, char select, all missions, cutscenes). The procedural Sayed and the first Saeed.glb stay in the file as backups only.
+// Mixamo-style rig driven by the procedural pose proxies. Rollback: ?s02=off restores the procedural Sayed. If the GLB fails to load the procedural Sayed is used (S02.errs).
 const SAEED02_MAP = { hips: 'Hips', torso: 'Spine', head: 'Head', armL: 'LeftArm', armR: 'RightArm', foreL: 'LeftForeArm', foreR: 'RightForeArm', legL: 'LeftUpLeg', legR: 'RightUpLeg', shinL: 'LeftLeg', shinR: 'RightLeg' };
-const S02 = { on: !/[?&]s02=off\b/.test(location.search), url: 'assets/characters/sayed/saeed_felfal_02.glb', state: 'off', model: null, errs: [], info: null };
+const S02 = { on: !/[?&]s02=off\b/.test(location.search), url: 'assets/characters/sayed/saeed_felfal_02.glb', state: 'off', model: null, gl: null, fit: 0, errs: [], info: null, made: 0 };
+const S02_CREATE = window.AreesCast.create;                       // original factory (procedural cast)
+S02.make = () => { S02.made++; return saeedBuild({ scene: S02.skel.clone(S02.gl.scene) }, SAEED02_MAP, S02.fit); };
+window.AreesCast.create = (T, id, ...r) => (id === 'sayed' && S02.gl) ? S02.make() : S02_CREATE(T, id, ...r);   // every future Sayed (cutscene actors, thumbnails…) is the new model
 async function loadS02() {
   if (!S02.on || S02.state !== 'off') return; S02.state = 'loading';
-  try { const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js'); const gl = await new GLTFLoader().loadAsync(S02.url);
-    const ref = new THREE.Box3().setFromObject(window.AreesCast.create(THREE, 'sayed')), fit = (ref.max.y - ref.min.y);
-    S02.model = saeedBuild(gl, SAEED02_MAP, fit); S02.info = GLB.info; S02.info.kind = 's02'; S02.state = 'loaded'; }
+  try { const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js'); S02.skel = await import('three/addons/utils/SkeletonUtils.js'); S02.gl = await new GLTFLoader().loadAsync(S02.url);
+    const ref = new THREE.Box3().setFromObject(S02_CREATE(THREE, 'sayed')); S02.fit = ref.max.y - ref.min.y;
+    const model = S02.model = S02.make(); S02.info = Object.assign({}, GLB.info, { kind: 's02' });
+    const old = heroModels.sayed; heroModels.sayed = model; delete THUMB.c_sayed; if (CINE.actors && CINE.actors.sayed) { const a = CINE.actors.sayed; if (a.parent) a.parent.remove(a); delete CINE.actors.sayed; }
+    const swap = () => { if (ui.mode === 'playing' || GM.on || CINE.on) return void setTimeout(swap, 700);
+      if (sayed === old) { const yaw = sayed.rotation.y; player.remove(sayed); sayed = model; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed); } };
+    swap(); S02.state = 'loaded'; }
   catch (e) { S02.state = 'fallback'; S02.errs.push(String(e && e.message || e)); }
 }
-function s02Apply(n) {                                                   // called at mission start only (never mid-run)
-  if (SEL.char !== 'sayed') return;
-  const want = n === 1 && S02.model ? S02.model : heroModels.sayed; if (!want || want === sayed) return;
-  const yaw = sayed.rotation.y; player.remove(sayed); sayed = want; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed);
-}
-if (S02.on) setTimeout(loadS02, 1500);
+function s02Apply() { if (SEL.char === 'sayed' && S02.model && sayed !== S02.model && heroModels.sayed === S02.model) { const yaw = sayed.rotation.y; player.remove(sayed); sayed = S02.model; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed); } }   // safety net at mission start
+if (S02.on) setTimeout(loadS02, 0);
 
 function charThumb(id) {
   return (THUMB['c_' + id] ||= (() => { const m = heroModel(id); window.AreesCast.animate(m, 'idle', 0, 0);
@@ -7892,7 +7895,7 @@ function cineMouth(who) {                                               // curre
 }
 // ---- Cinematic manager ----
 function cineActor(id) {
-  if (!CINE.actors[id]) { const m = window.AreesCast.create(THREE, id); cineRig(m, id); CINE.actors[id] = m; } return CINE.actors[id];
+  if (!CINE.actors[id]) { const m = window.AreesCast.create(THREE, id); if (!m.userData.saeed) cineRig(m, id); CINE.actors[id] = m; } return CINE.actors[id];
 }
 function cineStart(n, then) {
   const S = CINE_SCENES[n]; if (!S || CINE.on) return false;
@@ -8052,7 +8055,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__arees = { S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__arees = { heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
