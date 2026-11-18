@@ -3753,11 +3753,11 @@ function setObstacleSkin(skin) {                                       // purge 
   for (const k of ['over', 'block']) { for (const g of (pool[k] || [])) scene.remove(g); pool[k] = []; }
 }
 // ---- M01 upgrade (Mission 01 ONLY): fair procedural rows, dynamic street events, a secret alley, replay challenges ----
-const M1 = { rng: Math.random, open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, secLane: 0, secDone: false, set: 0, alerts: [], evaluated: false };
+const M1 = { rng: Math.random, open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, sg: [0, 0], sd2: false, secLane: 0, secDone: false, set: 0, alerts: [], watch: [], chShown: false, evaluated: false };
 const m1seed = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
-const M1_SEC = { from: 250, to: 322, need: 16 };                       // the side alley: metres where one outer lane is kept clear and lined with golden canes
+const M1_SECS = [{ from: 250, to: 322, need: 16, pts: 600 }, { from: 445, to: 515, need: 12, pts: 500 }];   // route 1 'alley' (jump hurdles) and route 2 'rooftop lane' (opposite side, slides + jumps, shield reward)                       // the side alley: metres where one outer lane is kept clear and lined with golden canes
 const M1_SETS = [[['zaffa', 130], ['tuktuk', 390], ['rush', 540], ['men', 690]], [['tuktuk', 140], ['zaffa', 410], ['rush', 560], ['men', 700]], [['rush', 120], ['zaffa', 380], ['tuktuk', 520], ['men', 680]]];   // run-to-run variety: which street event comes when
-function m01Reset() { M1.rng = m1seed((Math.random() * 1e9) | 0); Object.assign(M1, { open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, secDone: false, alerts: [], evaluated: false }); M1.secLane = M1.rng() < 0.5 ? 0 : 2; M1.set = (M1.rng() * 3) | 0; }
+function m01Reset() { M1.rng = m1seed((Math.random() * 1e9) | 0); Object.assign(M1, { open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, sg: [0, 0], sd2: false, secDone: false, alerts: [], watch: [], chShown: false, evaluated: false }); M1.secLane = M1.rng() < 0.5 ? 0 : 2; M1.set = (M1.rng() * 3) | 0; }
 const m1others = (o) => [0, 1, 2].filter((x) => x !== o);
 const m1near = () => { const c = [M1.open - 1, M1.open, M1.open + 1].filter((x) => x >= 0 && x <= 2); return c[(M1.rng() * c.length) | 0]; };
 // Every row keeps at least one fully clear lane within ONE step of the previous clear lane (or is a jump-all / slide-all row) — so no row is ever unfair.
@@ -3781,23 +3781,60 @@ function m01Events(ev, d) {                                          // street e
   else if (ev === 'tuktuk') { let o = M1.open; for (const L of [0, 2, 0, 1]) { const a = m1others(L).sort((x, y) => Math.abs(x - o) - Math.abs(y - o))[0]; o = a; add([['block', L]], o, 8); } }
   else if (ev === 'men') { for (let i = 0; i < 3; i++) { const a = m1near(); add([['low', a], ...m1others(a).map((x) => ['over', x])], a, 11); } }
   else if (ev === 'rush') { for (let i = 0; i < 3; i++) add([], M1.open, 12, { rush: true }); }
-  if (rows.length) rows[0].ev = ev; return rows;
+  if (rows.length) { rows[0].ev = ev; rows[rows.length - 1].evLast = true; } return rows;
 }
 function m01Next(d) {
   if (M1.evQ.length) return M1.evQ.shift();
   for (const [k, at] of M1_SETS[M1.set]) { if (M1.ev[k]) continue; if (d < at) continue; M1.ev[k] = 1; if (d > at + 60) continue; M1.evQ = m01Events(k, d); return M1.evQ.shift(); }
   const row = m01Row(d); M1.n++;
-  if (d >= M1_SEC.from && d < M1_SEC.to) { const L = M1.secLane; row.obs = row.obs.filter(([, l]) => l !== L); if (M1.n % 2 === 0) row.obs.push(['low', L]); row.sec = true; M1.open = row.open = row.open; }
+  for (let si = 0; si < 2; si++) if (d >= M1_SECS[si].from && d < M1_SECS[si].to) { const L = si ? 2 - M1.secLane : M1.secLane; row.obs = row.obs.filter(([, l]) => l !== L); if (M1.n % 2 === 0) row.obs.push([si && M1.n % 4 === 0 ? 'over' : 'low', L]); row.sec = si + 1; row.secL = L; }
   return row;
 }
 const M1_TXT = { zaffa: ['زفّة معدّية! اوعى للطبل 🥁', 'Procession ahead! Mind the drums 🥁'], tuktuk: ['توك توك مجنون جاي! ⚠', 'Crazy tuk-tuk coming! ⚠'],
   men: ['رجالة حنكش في السكة!', "Hankash's men ahead!"], rush: ['حارة الخير! لمّ القصب 🌾', 'Lucky stretch! Grab the cane 🌾'] };
-function m01Tick() {                                                  // fires the heads-up when an event is ~45 m away
+
+// ---- M01 street props: ahwa corner, aish-baladi bike, fruit cart, sebil jar, fanous post, kushari cart. Procedural, shadowed, reflective; recycled by player distance. ----
+const M1P = { g: null, items: [], sp: 22 };
+function m01Props() {
+  if (SETTINGS.quality === 'low') { if (M1P.g) M1P.g.visible = false; return; }     // Low quality: no extra props
+  if (!M1P.g) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128; const cx = cv.getContext('2d'); cx.fillStyle = '#9a6a3c'; cx.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 90; i++) { cx.fillStyle = `rgba(${40 + (i * 7) % 60},${25 + (i * 5) % 30},10,${0.12 + (i % 5) * 0.04})`; cx.fillRect(0, (i * 37) % 128, 128, 1 + (i % 3)); }
+    const woodTex = new THREE.CanvasTexture(cv); woodTex.colorSpace = THREE.SRGBColorSpace; woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+    const S = (o) => new THREE.MeshStandardMaterial(Object.assign({ envMap: ITEM_ENV, envMapIntensity: 0.55 }, o));
+    const wood = S({ map: woodTex, bumpMap: woodTex, bumpScale: 0.8, roughness: 0.78 }), metal = S({ color: 0x9aa3a8, metalness: 0.85, roughness: 0.32, envMapIntensity: 0.9 }), clay = S({ color: 0xb8683a, roughness: 0.7 }),
+      red = S({ color: 0xb03a2e, roughness: 0.6 }), cream = S({ color: 0xe8d9b5, roughness: 0.8 }), lamp = new THREE.MeshStandardMaterial({ color: 0xffb040, emissive: 0xff9a20, emissiveIntensity: 1.3 }), dark = S({ color: 0x2a2220, roughness: 0.5 });
+    const box = (m, w, h, d, x, y, z, par) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
+    const cyl = (m, rt, rb, h, x, y, z, par, seg = 10) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
+    const sph = (m, r, x, y, z, par) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
+    const wheel = (par, x, y, z) => { const o = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 6, 14), dark); o.position.set(x, y, z); o.rotation.y = Math.PI / 2; o.castShadow = true; par.add(o); };
+    const makers = [
+      (g) => { cyl(wood, 0.42, 0.42, 0.05, 0, 0.7, 0, g, 14); cyl(metal, 0.05, 0.05, 0.7, 0, 0.35, 0, g); for (const sx of [-0.7, 0.7]) { box(wood, 0.4, 0.06, 0.4, sx, 0.42, 0, g); box(wood, 0.4, 0.5, 0.06, sx + (sx > 0 ? 0.18 : -0.18), 0.68, 0, g).rotation.z = 0; } cyl(metal, 0.09, 0.12, 0.3, 0.1, 0.88, 0, g); sph(clay, 0.09, 0.1, 1.08, 0, g); },     // ahwa table + chairs + shisha
+      (g) => { wheel(g, 0, 0.3, 0.45); wheel(g, 0, 0.3, -0.45); box(metal, 0.06, 0.06, 1, 0, 0.6, 0, g); box(wood, 0.7, 0.05, 0.6, 0, 1.15, 0.0, g); for (let i = 0; i < 6; i++) cyl(cream, 0.17, 0.17, 0.07, -0.18 + (i % 3) * 0.18, 1.2 + Math.floor(i / 3) * 0.07, -0.12 + Math.floor(i / 3) * 0.24, g, 10); },   // aish baladi bike
+      (g) => { box(wood, 1.3, 0.5, 0.8, 0, 0.6, 0, g); wheel(g, 0.7, 0.3, 0.3); wheel(g, 0.7, 0.3, -0.3); for (let i = 0; i < 6; i++) sph(i % 2 ? red : S({ color: 0xe0a020, roughness: 0.5 }), 0.14, -0.45 + i * 0.18, 0.95 + (i % 2) * 0.05, (i % 3 - 1) * 0.2, g); box(red, 1.5, 0.05, 1.0, 0, 1.9, 0, g); for (const sx of [-0.7, 0.7]) box(wood, 0.05, 1.3, 0.05, sx, 1.25, 0.4, g); },   // fruit cart + awning
+      (g) => { box(wood, 0.5, 0.9, 0.5, 0, 0.45, 0, g); sph(clay, 0.42, 0, 1.25, 0, g).scale.y = 1.2; cyl(clay, 0.2, 0.22, 0.14, 0, 1.82, 0, g); box(metal, 0.08, 0.1, 0.2, 0.25, 0.95, 0, g); },   // sebil water jar
+      (g) => { cyl(dark, 0.05, 0.07, 3.2, 0, 1.6, 0, g, 8); box(dark, 0.5, 0.05, 0.05, 0.25, 3.0, 0, g); cyl(lamp, 0.12, 0.17, 0.4, 0.5, 2.78, 0, g, 8); },   // fanous post
+      (g) => { box(metal, 1.0, 0.8, 0.7, 0, 0.75, 0, g); wheel(g, 0.55, 0.3, 0.3); wheel(g, 0.55, 0.3, -0.3); cyl(metal, 0.07, 0.07, 0.8, -0.3, 1.55, 0, g); for (let i = 0; i < 3; i++) cyl(i ? cream : red, 0.14, 0.14, 0.14, -0.2 + i * 0.25, 1.22, 0, g, 10); }   // kushari cart
+    ];
+    M1P.g = new THREE.Group(); const N = IS_MOBILE ? 5 : 10;
+    for (let i = 0; i < N; i++) { const g = new THREE.Group(); makers[i % makers.length](g); g.userData.side = i % 2 ? 1 : -1; g.rotation.y = g.userData.side > 0 ? -Math.PI / 2 : Math.PI / 2; M1P.g.add(g); M1P.items.push(g); }
+    M1P.cyc = N * M1P.sp; scene.add(M1P.g);
+  }
+  M1P.g.visible = true; const zn = player.position.z + 12;
+  M1P.items.forEach((g, i) => { const m = (((zn + i * M1P.sp) % M1P.cyc) + M1P.cyc) % M1P.cyc; g.position.set(g.userData.side * 3.95, 0.12, zn - m); });
+}
+const M1_OK = { zaffa: ['عدّيت الزفة من غير خبطة! +250', 'Through the procession untouched! +250', 250], tuktuk: ['فلتّ من التوك توك! +200', 'Dodged the tuk-tuk! +200', 200], men: ['فكّيت رجالة حنكش! درع أم رجب 🛡', "Beat Hankash's men! Om Ragab shield 🛡", 0] };
+function m01Tick() {
+  if (!M1.chShown && MS.state === 'RUNNING') { M1.chShown = true; const l = SETTINGS.lang === 'en' ? 'en' : 'ar'; toast(t('chTitle') + ': ' + M1_CH.map((c) => c[l]).join(' · ')); }
+  for (let i = M1.watch.length - 1; i >= 0; i--) { const w = M1.watch[i]; if (w.k === 'rush' || w.z1 === null) continue;
+    if (w.h0 === null && player.position.z < w.z0 + 3) w.h0 = state.hits;
+    if (w.h0 !== null && player.position.z < w.z1 - 2) { M1.watch.splice(i, 1); if (state.hits === w.h0 && M1_OK[w.k]) { const o = M1_OK[w.k]; state.bonus += o[2]; toast(o[SETTINGS.lang === 'en' ? 1 : 0]); if (w.k === 'men') activatePower('ragab'); SFX.goal(); } } }
+  m01Props();                                                  // fires the heads-up when an event is ~45 m away
   for (let i = M1.alerts.length - 1; i >= 0; i--) { const a = M1.alerts[i]; if (player.position.z - a.z < 48) { M1.alerts.splice(i, 1); const tx = M1_TXT[a.k][SETTINGS.lang === 'en' ? 1 : 0]; banner(tx, a.k === 'rush' ? 'win' : 'chase'); if (a.k !== 'rush') SFX.warn(); } }
 }
 // Replay challenges (saved on this device): first clear pays the full bonus, later clears pay a small one.
 const M1_CH = [ { id: 'clean', ar: 'من غير ولا خدش', en: 'Flawless run', pts: 400, ok: () => state.hits === 0 },
-  { id: 'alley', ar: 'حارة السر', en: 'Secret alley', pts: 300, ok: () => M1.secDone },
+  { id: 'alley', ar: 'اكتشف الحارتين السريتين', en: 'Find both secret lanes', pts: 300, ok: () => M1.secDone && M1.sd2 },
   { id: 'bare', ar: 'جري نضيف · من غير دعم', en: 'Pure run · no power-ups', pts: 350, ok: () => mission.mahshi + mission.tray + mission.ragab === 0 } ];
 const m1save = () => { let o = {}; try { o = JSON.parse(localStorage.getItem('arees.m01ch') || '{}'); } catch {} o.done ||= {}; return o; };
 let M1R = [];
@@ -3820,10 +3857,11 @@ function updateTrack() {
     const i = track.row % TRACK.rows.length, d = -track.z, intro = d < M01.length * M01.at.RUNNING, chase = d >= M01.length * M01.at.ESCALATION;
     if (STAGE.n === 1) {                                                 // M01 upgrade: fair procedural rows + events + secret alley
       const row = m01Next(d); for (const [type, lane] of row.obs) spawn(type, lane, track.z);
-      if (row.ev) M1.alerts.push({ k: row.ev, z: track.z });
+      if (row.ev) { M1.alerts.push({ k: row.ev, z: track.z }); M1.watch.push({ k: row.ev, z0: track.z, z1: null, h0: null }); }
+      if (row.evLast && M1.watch.length) M1.watch[M1.watch.length - 1].z1 = track.z;
       const next = M01.powerups[track.power];
       if (next && d + 10 >= next[0]) { spawn(next[1], row.open, track.z - 6); track.power++; }
-      else if (row.sec) for (let c = 0; c < 4; c++) { spawn('cane', M1.secLane, track.z - 3 - c * 1.6); pickups[pickups.length - 1].userData.secret = true; }
+      else if (row.sec) for (let c = 0; c < 4; c++) { spawn('cane', row.secL, track.z - 3 - c * 1.6); pickups[pickups.length - 1].userData.secret = row.sec; }
       else if (row.rush) for (const l of [0, 1, 2]) for (let c = 0; c < 3; c++) spawn('cane', l, track.z - 2 - c * 3);
       else if (mission.cane < MISSION.cane) for (let c = 0; c < TRACK.canesPerGap; c++) spawn('cane', row.open, track.z - 3 - c * 1.5);
       track.row++; track.z -= row.sp || (chase ? M01.escSpacing : TRACK.spacing); continue;
@@ -3924,11 +3962,11 @@ function collectPickups() {
     const g = pickups[i]; if (!g) continue;                             // M10.4 fix: the list may shrink mid-loop
     if (!hitBox(g, PICKUP[g.userData.type].hit)) continue;
     const type = g.userData.type;
-    if (type === 'cane' && g.userData.secret) {                          // M01 secret alley canes: own counter, never count toward the 50
-      M1.secGot++; state.bonus += 40; recycle(pickups, i, true); SFX.cane();
-      if (M1.secGot === 1) toast(t('toastSecret'));
-      if (!M1.secDone && M1.secGot >= M1_SEC.need) { M1.secDone = true; state.bonus += 600; setTimeout(SFX.goal, 120); toast(t('toastSecretDone')); npcCelebrate(clock.elapsedTime);
-        const pop = document.createElement('div'); pop.className = 'pop big'; pop.dir = 'ltr'; pop.textContent = '+600'; popsEl.appendChild(pop); setTimeout(() => pop.remove(), 1100); }
+    if (type === 'cane' && g.userData.secret) {                          // M01 secret-route canes: own counters, never count toward the 50
+      const si = g.userData.secret - 1, S = M1_SECS[si]; M1.sg[si]++; M1.secGot++; state.bonus += 40; recycle(pickups, i, true); SFX.cane();
+      if (M1.sg[si] === 1) toast(t(si ? 'toastSecret2' : 'toastSecret'));
+      if (M1.sg[si] >= S.need && !(si ? M1.sd2 : M1.secDone)) { if (si) { M1.sd2 = true; activatePower('ragab'); } else M1.secDone = true; state.bonus += S.pts; setTimeout(SFX.goal, 120); toast(t(si ? 'toastSecretDone2' : 'toastSecretDone')); npcCelebrate(clock.elapsedTime);
+        const pop = document.createElement('div'); pop.className = 'pop big'; pop.dir = 'ltr'; pop.textContent = '+' + S.pts; popsEl.appendChild(pop); setTimeout(() => pop.remove(), 1100); }
       continue;
     }
     if (type === 'cane') {
@@ -4247,6 +4285,10 @@ function throwPattern() {
   for (const [type, lanes] of pat) for (const l of lanes) { spawn(type, l, z); const g = active[active.length - 1]; g.userData.drop = 0.35; g.userData.dropT = 0; g.userData.boss = true; }
   clearTelegraph(); SFX.throw(); boss.log.push('attack'); if (boss.wave === 1 && boss.attack === 0) bossSay('bogaThrow', 1.8);
 }
+const slamRing = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.95, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.8, depthWrite: false, side: THREE.DoubleSide })); slamRing.visible = false; scene.add(slamRing);
+function startSlam() {                                                // M01 attack 3: leap + ground slam — a shockwave rolls out, be airborne when it reaches Sayed
+  Object.assign(boss, { mode: 'slamTele', t: 0, lane: state.lane }); clearTelegraph(); warn(t('warnSlam'), 'warnJump'); SFX.warn(); bossSay('bogaSlam', 1.6); boss.log.push('slam');
+}
 function startCharge() {
   Object.assign(boss, { mode: 'chargeTele', t: 0, lane: state.lane }); clearTelegraph(); warn(t('warnCharge'), 'warnLane'); SFX.warn(); bossSay('bogaCharge', 1.6); boss.log.push('charge');
 }
@@ -4277,7 +4319,16 @@ function updateBoss(dt) {
   } else if (u.mode === 'telegraph') {
     if (u.t >= (STAGE.n === 1 ? BOSS_CFG.telegraph - 0.1 * (BOSS_CFG.hp - boss.hp) : BOSS_CFG.telegraph)) { throwPattern(); u.mode = 'gap'; u.t = 0; }
   } else if (u.mode === 'gap') {
-    if (u.t >= BOSS_CFG.gap) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1 && BOSS_CFG.hp - boss.hp >= 1) startCharge(); else startTrip(); }
+    if (u.t >= BOSS_CFG.gap) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1 && BOSS_CFG.hp - boss.hp >= 2) startSlam(); else if (STAGE.n === 1 && BOSS_CFG.hp - boss.hp >= 1) startCharge(); else startTrip(); }
+  } else if (u.mode === 'slamTele') {
+    u.y += (2.6 - u.y) * (1 - Math.exp(-dt * 7)); u.rel += (6.5 - u.rel) * (1 - Math.exp(-dt * 3)); tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xffd23a);
+    if (u.t >= 0.85) { u.mode = 'slam'; u.t = 0; u.vy = -30; }
+  } else if (u.mode === 'slam') {
+    u.vy -= 30 * dt; u.y = Math.max(0, u.y + u.vy * dt);
+    if (u.y === 0) { clearTelegraph(); FX.shake = 0.5; SFX.hit(); u.mode = 'slamWave'; u.t = 0; slamRing.visible = true; }
+  } else if (u.mode === 'slamWave') {
+    const k = Math.min(1, u.t / 0.65); slamRing.position.set(bossModel.position.x, 0.06, bossModel.position.z); slamRing.scale.setScalar(1 + k * 8); slamRing.material.opacity = 0.85 * (1 - k * 0.6);
+    if (u.t >= 0.65) { slamRing.visible = false; if (player.position.y < PLAYER_Y + 0.3 && state.invuln <= 0 && PWR.mahshi <= 0) takeHit(); startTrip(); }
   } else if (u.mode === 'chargeTele') {                                  // M01: Bo'ga paws the ground, a red lane lights up — step out of it or jump
     tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xe8343a); FX.shake = Math.max(FX.shake, 0.04);
     if (u.t >= 0.95 - 0.1 * (BOSS_CFG.hp - boss.hp - 1)) { u.mode = 'charge'; u.t = 0; SFX.throw(); }
@@ -4321,7 +4372,7 @@ function updateBoss(dt) {
 }
 function animateBoss(t, dt) {
   if (!bossModel.visible && boss.mode === 'hidden') return;
-  const m = boss.mode, mode = m === 'stalk' || m === 'charge' ? 'run' : m === 'telegraph' || m === 'chargeTele' ? 'cheer' : m === 'trip' || m === 'dizzy' || m === 'defeated' ? 'defeat' : m === 'enter' && boss.y > 0 ? 'jump' : t < boss.talkUntil ? 'talk' : 'idle';
+  const m = boss.mode, mode = m === 'stalk' || m === 'charge' ? 'run' : m === 'telegraph' || m === 'chargeTele' ? 'cheer' : m === 'trip' || m === 'dizzy' || m === 'defeated' ? 'defeat' : (m === 'enter' || m === 'slamTele' || m === 'slam') && boss.y > 0 ? 'jump' : t < boss.talkUntil ? 'talk' : 'idle';
   window.AreesCast.animate(bossModel, MS.state === 'GAME_OVER' ? 'cheer' : mode, t, dt);
   const showIt = ui.mode === 'playing' && bossModel.visible && t < boss.talkUntil;
   if (showIt) { const r = renderer.domElement.getBoundingClientRect(); headPos.set(bossModel.position.x, bossModel.position.y + 2.3, bossModel.position.z).project(camera);
@@ -4329,7 +4380,7 @@ function animateBoss(t, dt) {
   bossBubble.classList.toggle('show', showIt && headPos.z < 1);
 }
 function resetBoss() {
-  Object.assign(boss, { mode: 'hidden', hp: BOSS_CFG.hp, rel: BOSS_CFG.stalk, lane: 1, t: 0, volley: [], attack: 0, wave: 0, hits: 0, talkUntil: 0, flashT: 0, y: 0, vy: 0, landed: false, log: [] }); M1.evQ = [];
+  Object.assign(boss, { mode: 'hidden', hp: BOSS_CFG.hp, rel: BOSS_CFG.stalk, lane: 1, t: 0, volley: [], attack: 0, wave: 0, hits: 0, talkUntil: 0, flashT: 0, y: 0, vy: 0, landed: false, log: [] }); M1.evQ = []; slamRing.visible = false;
   bossModel.visible = false; bossModel.rotation.set(0, 0, 0); bossModel.position.set(0, 0, 0); stars.visible = false; clearTelegraph(); bossBubble.classList.remove('show'); if (typeof resetCombat === 'function') resetCombat();
 }
 // ---- M33 combat: throw a cartoon tool (sandal vs Bo'ga, tray-disc vs Hankash) and raise a guard. Bo'ga flinches when hit; Hankash is ARMOURED — shield first, then the stomp window. ----
@@ -4537,7 +4588,7 @@ function show(mode) {
 }
 const go = (mode) => { if (ui.mode !== mode) nav.push(ui.mode); show(mode); };
 const back = () => show(nav.pop() || 'menu');
-function startMission() { STAGE.n = SEL.level; s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
+function startMission() { STAGE.n = SEL.level; if (M1P.g) M1P.g.visible = false; s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
 function goMenu() { stopVoice(); STAGE.n = 1; BOSS_CFG.hp = 3; setBossModel(false); setObstacleSkin('market'); restart(); nav.length = 0; ui.runActive = false; show('menu'); }
 function pauseGame() { if (ui.mode === 'playing' && !state.over) { stopVoice(); show('pause'); } }
 function resumeGame() { if (ui.mode === 'pause') { clock.getDelta(); show('playing'); } } // drop paused time
@@ -4551,7 +4602,7 @@ const L10N = {
         done: 'تم', paused: 'استراحة', resume: 'كمّل', restart: 'إعادة المهمة', mainMenu: 'القائمة الرئيسية', missionComplete: 'المهمة اكتملت!', score: 'النقاط', time: 'الوقت',
         hearts: 'الفرص الباقية', continue: 'كمّل', replay: 'العب تاني', runOver: 'انتهت الجولة', cane: 'القصب', retry: 'حاول تاني', back: 'رجوع', sound: 'الصوت', on: 'تشغيل', off: 'إيقاف',
         playable: 'متاحة', storyOnly: 'في القصة بس', villain: 'شرير', comingSoon: 'قريبًا', needsRide: 'محتاجة مواصلة', mission: 'المهمة', goalCane: 'قصب', goalMahshi: 'حلة محشي', goalTray: 'صينية شربات',
-        goalCaneLong: 'عيدان قصب', goalTrayLong: 'صينية كاسات شربات', toastMahshi: 'حلة المحشي معانا ✓', toastTray: 'صينية الشربات معانا ✓', toastCane: '50 عود قصب! بونص +500', warnCharge: '⚠ هيجري عليك! غيّر الحارة أو اقفز!', bogaCharge: 'هدوسّك يا سيد! جاي جاي!', bogaPhase2: 'بؤجة اتعصّب! 🔥', bogaPhase3: 'بؤجة هاج خلاص! آخر جولة!', toastSecret: '🤫 لقيت حارة السر! كمّل القصب الدهبي', toastSecretDone: '✨ كنز الحارة! +600', chTitle: 'تحديات', left: 'فاضل: ',
+        goalCaneLong: 'عيدان قصب', goalTrayLong: 'صينية كاسات شربات', toastMahshi: 'حلة المحشي معانا ✓', toastTray: 'صينية الشربات معانا ✓', toastCane: '50 عود قصب! بونص +500', warnCharge: '⚠ هيجري عليك! غيّر الحارة أو اقفز!', warnSlam: '⚠ هيخبط الأرض! اقفز لما توصلك الموجة!', bogaSlam: 'استنى بس... هنزل عليك زي الجبل!', toastSecret2: '🤫 حارة السطوح! زحلق واقفز', toastSecretDone2: '🛡 كنز السطوح! +500 ودرع أم رجب', bogaCharge: 'هدوسّك يا سيد! جاي جاي!', bogaPhase2: 'بؤجة اتعصّب! 🔥', bogaPhase3: 'بؤجة هاج خلاص! آخر جولة!', toastSecret: '🤫 لقيت حارة السر! كمّل القصب الدهبي', toastSecretDone: '✨ كنز الحارة! +600', chTitle: 'تحديات', left: 'فاضل: ',
         hint: 'اسحب يمين أو شمال للحارة · لفوق قفز · لتحت تزحلق', dodge: 'حلوة!', notBuilt: 'المهمة دي لسه بتتعمل', selected: 'مختارة', previewOnly: 'معاينة بس', completed: 'خلصتها ✓',
         loseSub: 'وصلت لـ {p}% من الطريق', loseSubBoss: 'بؤجة كسب الجولة دي... جرّب تاني!', nextSoon: 'المهمة الجاية قريبًا',
         phaseRunning: 'الشارع بيزحم... ركّز!', bannerChase: 'مطاردة! بؤجة قدامك', radioBoss: 'الراديو هيرجع بعد الخناقة', bannerWin: 'هزمت بؤجة!',
@@ -4571,7 +4622,7 @@ const L10N = {
         done: 'Done', paused: 'Paused', resume: 'Resume', restart: 'Restart mission', mainMenu: 'Main menu', missionComplete: 'Mission complete!', score: 'Score', time: 'Time',
         hearts: 'Lives left', continue: 'Continue', replay: 'Replay', runOver: 'Run over', cane: 'Cane', retry: 'Try again', back: 'Back', sound: 'Sound', on: 'On', off: 'Off',
         playable: 'Playable', storyOnly: 'Story only', villain: 'Villain', comingSoon: 'Coming soon', needsRide: 'Needs a ride', mission: 'Mission', goalCane: 'Cane', goalMahshi: 'Mahshi pot', goalTray: 'Sharbat tray',
-        goalCaneLong: 'Sugarcane sticks', goalTrayLong: 'Tray of sharbat glasses', toastMahshi: 'Got the mahshi pot ✓', toastTray: 'Got the sharbat tray ✓', toastCane: '50 sugarcane sticks! Bonus +500', warnCharge: '⚠ He is charging! Change lane or jump!', bogaCharge: "I'll flatten you, Sayed! Here I come!", bogaPhase2: "Bo'ga is furious! 🔥", bogaPhase3: "Bo'ga lost it! Final round!", toastSecret: '🤫 Secret alley found! Keep the golden cane coming', toastSecretDone: '✨ Alley treasure! +600', chTitle: 'Challenges', left: 'Still need: ',
+        goalCaneLong: 'Sugarcane sticks', goalTrayLong: 'Tray of sharbat glasses', toastMahshi: 'Got the mahshi pot ✓', toastTray: 'Got the sharbat tray ✓', toastCane: '50 sugarcane sticks! Bonus +500', warnCharge: '⚠ He is charging! Change lane or jump!', warnSlam: '⚠ Ground slam! Jump when the wave arrives!', bogaSlam: 'Hold on... I am coming down like a mountain!', toastSecret2: '🤫 Rooftop lane! Slide and jump', toastSecretDone2: '🛡 Rooftop treasure! +500 and Om Ragab shield', bogaCharge: "I'll flatten you, Sayed! Here I come!", bogaPhase2: "Bo'ga is furious! 🔥", bogaPhase3: "Bo'ga lost it! Final round!", toastSecret: '🤫 Secret alley found! Keep the golden cane coming', toastSecretDone: '✨ Alley treasure! +600', chTitle: 'Challenges', left: 'Still need: ',
         hint: 'Swipe left/right to change lane · up to jump · down to slide', dodge: 'Nice!', notBuilt: 'This mission is still in production', selected: 'Selected', previewOnly: 'Preview only', completed: 'Completed ✓',
         loseSub: 'You made it {p}% of the way', loseSubBoss: "Bo'ga won this round... try again!", nextSoon: 'Next mission coming soon',
         phaseRunning: 'The street is getting busy... focus!', bannerChase: "Chase! Bo'ga is ahead", radioBoss: 'The radio is back after the fight', bannerWin: "You beat Bo'ga!",
@@ -8185,7 +8236,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__fx = PFX; window.__arees = { M1, M1_CH, M1_SEC, m01Next, m01Reset, m01Eval, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__fx = PFX; window.__arees = { M1, M1_CH, M1_SECS, M1P, startSlam, m01Next, m01Reset, m01Eval, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
