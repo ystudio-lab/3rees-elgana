@@ -1946,10 +1946,10 @@ const MISSION = { cane: 50, caneBonus: 500 };
 // M12 Mission 01 structure. Progress = distance run until the boss gate (80 %), then Bo'ga's health (80 → 100 %).
 // Values are first-pass tuning (placeholders until playtesting).
 const M01 = {
-  length: 1000,                                        // metres for 100 % of the distance part; the boss starts at 80 % (800 m)
+  length: 520,                                         // metres for 100 % of the run; the boss starts at 80 % (416 m) — short enough for the <65 s Gold Star challenge
   at: { RUNNING: 0.2, ESCALATION: 0.6, BOSS_ENCOUNTER: 0.8 },
   escSpeed: 1.25, escSpacing: 11,                      // chase: faster run, denser rows
-  powerups: [[240, 'mahshi'], [370, 'tray'], [500, 'ragab'], [650, 'mahshi'], [740, 'ragab']]   // metres → item, in the open lane
+  powerups: [[110, 'mahshi'], [190, 'tray'], [255, 'ragab'], [320, 'mahshi'], [385, 'ragab']]   // metres → item, in the open lane
 };
 const POWER = { mahshi: { time: 7 }, tray: { time: 5, speed: 1.5 }, ragab: { time: 12, charges: 3 } };
 const BOSS_CFG = { hp: 3, ahead: 20, stalk: 42, telegraph: 1.0, gap: 1.25, dizzy: 0.6, recover: 1.3 };
@@ -3359,6 +3359,7 @@ function crateReward(c, x, z) {
 }
 function breakCrate(g) {
   const i = active.indexOf(g); if (i < 0) return;
+  if (g.userData.alley && !M1.alleyDone) m01Alley();
   const x = g.position.x, z = g.position.z, c = g.userData.content || { k: 'score', v: 100 };
   active.splice(i, 1); g.visible = false; pool.low.push(g);
   crateDebris(x, z); burst(x, 0.7, z - player.position.z, true); SFX.crate(); FX.shake = Math.max(FX.shake, 0.1);
@@ -3448,6 +3449,20 @@ const OBSTACLE = {
     hit: { x: LANE_WIDTH / 2, y0: 1.4, y1: 1.8, z: 0.25 },
     build: (g) => g.add(OBST_SKIN === 'desert' ? obstacleMesh('over_d', 'Obstacle_Overhead', buildDesertLintel) : obstacleMesh('over', 'Obstacle_Overhead', buildAwningBar))
   },
+  cloth: { hit: { x: LANE_WIDTH / 2, y0: 1.4, y1: 1.8, z: 0.25 }, build: (g) => {        // M01 clothesline: slide under
+    const rope = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH * 0.98, 0.04, 0.04), MATS.post); rope.position.y = 1.65; g.add(rope);
+    [[-0.7, 0xe8e0d0], [-0.1, 0x3a8a9a], [0.5, 0xd8a030]].forEach(([x, c], i) => { const sh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), new THREE.MeshLambertMaterial({ color: c, side: THREE.DoubleSide })); sh.position.set(x, 1.34, 0); sh.rotation.z = (i - 1) * 0.08; sh.castShadow = true; g.add(sh); });
+    for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.7, 0.06), MATS.post); p.position.set(sx * LANE_WIDTH * 0.5, 0.85, 0); g.add(p); } } },
+  trike: { hit: { x: 0.8, y0: 0, y1: 1.0, z: 0.55 }, build: (g) => {                      // M01 crossing tricycle: jump or lane-switch
+    const b = (w, h, d, x, y, z, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; g.add(o); }, dk = new THREE.MeshLambertMaterial({ color: 0x2a2220 }), bl = new THREE.MeshLambertMaterial({ color: 0x2e6fb0 }), rd = new THREE.MeshLambertMaterial({ color: 0xc8402e });
+    b(1.0, 0.45, 0.8, -0.35, 0.62, 0, bl); b(0.5, 0.08, 0.5, 0.35, 0.78, 0, rd); b(0.06, 0.6, 0.06, 0.62, 0.9, 0, dk); b(0.4, 0.05, 0.06, 0.62, 1.2, 0, dk);
+    for (const [x, z] of [[0.62, 0], [-0.75, 0.42], [-0.75, -0.42]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.08, 12), dk); w.rotation.x = Math.PI / 2; w.position.set(x, 0.26, z); w.castShadow = true; g.add(w); } } },
+  puddle: { hit: { x: 0, y0: 9, y1: 9.1, z: 0 }, build: (g) => {                           // M01 soap puddle: no damage, slips you
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.02, 18), new THREE.MeshStandardMaterial({ color: 0xcfe8f0, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85, envMap: ITEM_ENV, envMapIntensity: 1.3 })); m.position.y = 0.03; g.add(m);
+    for (let i = 0; i < 6; i++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1 + (i % 3) * 0.04, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffffff })); f.position.set(Math.cos(i * 1.1) * 0.5, 0.12, Math.sin(i * 1.1) * 0.5); g.add(f); } } },
+  ramp: { hit: { x: 0, y0: 9, y1: 9.1, z: 0 }, build: (g) => {                             // M01 secret ramp to the rooftop lane
+    const m = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.14, 2.6), MATS.crate); m.position.y = 0.3; m.rotation.x = -0.24; m.castShadow = true; g.add(m);
+    const s = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 0.3), new THREE.MeshLambertMaterial({ color: 0xffd23a })); s.position.set(0, 0.62, -1.15); s.rotation.x = -0.24; g.add(s); } },
   block: { // switch lanes — M21: hand-cart piled high under a blue tarp, too tall to jump (2.8 > jump clearance)
     hit: { x: 0.8, y0: 0, y1: 2.8, z: 1.1 },
     build: (g) => g.add(OBST_SKIN === 'desert' ? obstacleMesh('block_d', 'Obstacle_Block', buildDesertStack) : obstacleMesh('block', 'Obstacle_Block', buildLoadedCart))
@@ -3742,7 +3757,7 @@ function spawn(type, lane, z) {
   if (!g) { g = new THREE.Group(); g.userData.type = type; DEFS[type].build(g, MATS); scene.add(g); }
   g.position.set(laneX(lane), 0, z);
   g.rotation.y = 0;
-  g.userData.lane = lane; g.userData.passed = false; g.userData.secret = false;
+  g.userData.lane = lane; g.userData.passed = false; g.userData.secret = 0; g.userData.hit = 0; g.userData.honk = 0; g.userData.alley = false;
   if (type === 'low') g.userData.content = rollCrate();
   g.visible = true;
   (PICKUP[type] ? pickups : active).push(g);
@@ -3752,18 +3767,16 @@ function setObstacleSkin(skin) {                                       // purge 
   if (skin === OBST_SKIN) return; clearTrack(); OBST_SKIN = skin;
   for (const k of ['over', 'block']) { for (const g of (pool[k] || [])) scene.remove(g); pool[k] = []; }
 }
-// ---- M01 upgrade (Mission 01 ONLY): fair procedural rows, dynamic street events, a secret alley, replay challenges ----
-const M1 = { rng: Math.random, open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, sg: [0, 0], sd2: false, secLane: 0, secDone: false, set: 0, alerts: [], watch: [], chShown: false, evaluated: false };
+// ---- M01 gameplay layer (Mission 01 ONLY): events @25/55/77 %, secret routes @35/70 %, instanced props, challenges ----
+const M1 = {};
+const M1_PCT = { cloth: 0.25, ramp: 0.35, trike: 0.55, gate: 0.70, soap: 0.77 };      // share of the full run (the boss owns the last 20 %, so the puddle sits at 77 %)
 const m1seed = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
-const M1_SECS = [{ from: 250, to: 322, need: 16, pts: 600 }, { from: 445, to: 515, need: 12, pts: 500 }];   // route 1 'alley' (jump hurdles) and route 2 'rooftop lane' (opposite side, slides + jumps, shield reward)                       // the side alley: metres where one outer lane is kept clear and lined with golden canes
-const M1_SETS = [[['zaffa', 130], ['tuktuk', 390], ['rush', 540], ['men', 690]], [['tuktuk', 140], ['zaffa', 410], ['rush', 560], ['men', 700]], [['rush', 120], ['zaffa', 380], ['tuktuk', 520], ['men', 680]]];   // run-to-run variety: which street event comes when
-function m01Reset() { M1.rng = m1seed((Math.random() * 1e9) | 0); Object.assign(M1, { open: 1, last: '', n: 0, evQ: [], ev: {}, secGot: 0, sg: [0, 0], sd2: false, secDone: false, alerts: [], watch: [], chShown: false, evaluated: false }); M1.secLane = M1.rng() < 0.5 ? 0 : 2; M1.set = (M1.rng() * 3) | 0; }
+function m01Reset() { Object.assign(M1, { rng: m1seed((Math.random() * 1e9) | 0), open: 1, last: '', n: 0, evQ: [], ev: {}, alerts: [], combo: 0, bestCombo: 0, roofT: 0, roof: null, roofCoins: 0, roofDone: false, multT: 0, lk: 0, alleyDone: false, shield: 0, introT: 0, chShown: false, evaluated: false, blurT: 0, rampD: -1, coinsRun: 0, i1: 0, o1: 0, crates: [] }); if (M1P.roofG) M1P.roofG.visible = false; }
 const m1others = (o) => [0, 1, 2].filter((x) => x !== o);
 const m1near = () => { const c = [M1.open - 1, M1.open, M1.open + 1].filter((x) => x >= 0 && x <= 2); return c[(M1.rng() * c.length) | 0]; };
-// Every row keeps at least one fully clear lane within ONE step of the previous clear lane (or is a jump-all / slide-all row) — so no row is ever unfair.
-function m01Row(d) {
-  if (M1.n % 6 === 5 || (d < 200 && M1.n % 2 === 1)) return { obs: [], open: M1.open, canes: true };           // breathers: intro every other row, then every 6th
-  const ph = d < 200 ? 0 : d < 480 ? 1 : 2, r = M1.rng;
+function m01Row(d) {                                                  // fair rows: a clear lane within one step of the previous one, or a jump/slide-all row
+  if (M1.n % 6 === 5 || (d < M01.length * 0.2 && M1.n % 2 === 1)) return { obs: [], open: M1.open };
+  const ph = d < M01.length * 0.2 ? 0 : d < M01.length * 0.55 ? 1 : 2, r = M1.rng;
   const pool = ph === 0 ? ['s_low', 's_blk', 'all_low', 'all_over'] : ph === 1 ? ['s_blk', 'wall2', 'all_low', 'all_over', 'lowblk', 's_low'] : ['wall2', 'lowblk', 'mixjs', 'all_over', 'all_low', 'wall2'];
   let k, g = 0; do k = pool[(r() * pool.length) | 0]; while (k === M1.last && ++g < 6); M1.last = k;
   let obs = [], open = M1.open;
@@ -3772,81 +3785,129 @@ function m01Row(d) {
   else if (k === 'lowblk') { open = m1near(); const [a, b] = m1others(open); obs = [['low', a], ['block', b]]; }
   else if (k === 'all_low') obs = [0, 1, 2].map((x) => ['low', x]);
   else if (k === 'all_over') obs = [0, 1, 2].map((x) => ['over', x]);
-  else if (k === 'mixjs') { const a = (r() * 3) | 0; obs = [['low', a], ...m1others(a).map((x) => ['over', x])]; }   // every lane is passable (jump or slide); the player's lane is not forced to change
+  else if (k === 'mixjs') { const a = (r() * 3) | 0; obs = [['low', a], ...m1others(a).map((x) => ['over', x])]; }
   M1.open = open; return { obs, open };
 }
-function m01Events(ev, d) {                                          // street events: short authored sequences (always passable), announced when they spawn
-  const rows = []; const add = (obs, open, sp, extra) => { M1.open = open; rows.push(Object.assign({ obs, open, sp }, extra)); };
-  if (ev === 'zaffa') { let o = M1.open; for (const x of [1, 0, 1]) { o = x; add(m1others(o).map((l) => ['block', l]), o, 10, { canes: true }); } }
-  else if (ev === 'tuktuk') { let o = M1.open; for (const L of [0, 2, 0, 1]) { const a = m1others(L).sort((x, y) => Math.abs(x - o) - Math.abs(y - o))[0]; o = a; add([['block', L]], o, 8); } }
-  else if (ev === 'men') { for (let i = 0; i < 3; i++) { const a = m1near(); add([['low', a], ...m1others(a).map((x) => ['over', x])], a, 11); } }
-  else if (ev === 'rush') { for (let i = 0; i < 3; i++) add([], M1.open, 12, { rush: true }); }
-  if (rows.length) { rows[0].ev = ev; rows[rows.length - 1].evLast = true; } return rows;
+function m01Events(k) {
+  const rows = []; const add = (obs, sp, x) => rows.push(Object.assign({ obs, open: M1.open, sp }, x));
+  if (k === 'cloth') { add([0, 1, 2].map((l) => ['cloth', l]), 13); add([0, 1, 2].map((l) => ['cloth', l]), 14); }                    // slide under both
+  else if (k === 'trike') { add([['trike', 0]], 15); add([['trike', 2]], 15); }                                                       // crossing tricycles: jump or time a lane switch
+  else if (k === 'soap') { add([['puddle', 1], ['puddle', 2]], 13); add([['puddle', 0], ['puddle', 1]], 13); }                          // slip → combo reset
+  rows[0].ev = k; return rows;
 }
 function m01Next(d) {
-  if (M1.evQ.length) return M1.evQ.shift();
-  for (const [k, at] of M1_SETS[M1.set]) { if (M1.ev[k]) continue; if (d < at) continue; M1.ev[k] = 1; if (d > at + 60) continue; M1.evQ = m01Events(k, d); return M1.evQ.shift(); }
+  const L = M01.length; if (M1.evQ.length) return M1.evQ.shift();
+  for (const k of ['cloth', 'trike', 'soap']) if (!M1.ev[k] && d >= M1_PCT[k] * L) { M1.ev[k] = 1; if (d <= M1_PCT[k] * L + 30) { M1.evQ = m01Events(k); return M1.evQ.shift(); } }
+  if (!M1.ev.ramp && d >= M1_PCT.ramp * L) { M1.ev.ramp = 1; M1.rampD = d; return { obs: [], open: M1.open, ramp: true }; }
+  if (!M1.ev.gate && d >= M1_PCT.gate * L) { M1.ev.gate = 1; return { obs: [['low', 2]], open: 1, gate: true }; }
   const row = m01Row(d); M1.n++;
-  for (let si = 0; si < 2; si++) if (d >= M1_SECS[si].from && d < M1_SECS[si].to) { const L = si ? 2 - M1.secLane : M1.secLane; row.obs = row.obs.filter(([, l]) => l !== L); if (M1.n % 2 === 0) row.obs.push([si && M1.n % 4 === 0 ? 'over' : 'low', L]); row.sec = si + 1; row.secL = L; }
+  if (M1.rampD >= 0 && d > M1.rampD + 4 && d < M1.rampD + 84) { row.obs = row.obs.filter(([, l]) => l !== 0); row.coins = true; }      // rooftop lane (left) is clear and lined with coins
   return row;
 }
-const M1_TXT = { zaffa: ['زفّة معدّية! اوعى للطبل 🥁', 'Procession ahead! Mind the drums 🥁'], tuktuk: ['توك توك مجنون جاي! ⚠', 'Crazy tuk-tuk coming! ⚠'],
-  men: ['رجالة حنكش في السكة!', "Hankash's men ahead!"], rush: ['حارة الخير! لمّ القصب 🌾', 'Lucky stretch! Grab the cane 🌾'] };
-
-// ---- M01 street props: ahwa corner, aish-baladi bike, fruit cart, sebil jar, fanous post, kushari cart. Procedural, shadowed, reflective; recycled by player distance. ----
-const M1P = { g: null, items: [], sp: 22 };
-function m01Props() {
-  if (SETTINGS.quality === 'low') { if (M1P.g) M1P.g.visible = false; return; }     // Low quality: no extra props
-  if (!M1P.g) {
-    const cv = document.createElement('canvas'); cv.width = cv.height = 128; const cx = cv.getContext('2d'); cx.fillStyle = '#9a6a3c'; cx.fillRect(0, 0, 128, 128);
-    for (let i = 0; i < 90; i++) { cx.fillStyle = `rgba(${40 + (i * 7) % 60},${25 + (i * 5) % 30},10,${0.12 + (i % 5) * 0.04})`; cx.fillRect(0, (i * 37) % 128, 128, 1 + (i % 3)); }
-    const woodTex = new THREE.CanvasTexture(cv); woodTex.colorSpace = THREE.SRGBColorSpace; woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
-    const S = (o) => new THREE.MeshStandardMaterial(Object.assign({ envMap: ITEM_ENV, envMapIntensity: 0.55 }, o));
-    const wood = S({ map: woodTex, bumpMap: woodTex, bumpScale: 0.8, roughness: 0.78 }), metal = S({ color: 0x9aa3a8, metalness: 0.85, roughness: 0.32, envMapIntensity: 0.9 }), clay = S({ color: 0xb8683a, roughness: 0.7 }),
-      red = S({ color: 0xb03a2e, roughness: 0.6 }), cream = S({ color: 0xe8d9b5, roughness: 0.8 }), lamp = new THREE.MeshStandardMaterial({ color: 0xffb040, emissive: 0xff9a20, emissiveIntensity: 1.3 }), dark = S({ color: 0x2a2220, roughness: 0.5 });
-    const box = (m, w, h, d, x, y, z, par) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
-    const cyl = (m, rt, rb, h, x, y, z, par, seg = 10) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
-    const sph = (m, r, x, y, z, par) => { const o = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m); o.position.set(x, y, z); o.castShadow = true; par.add(o); return o; };
-    const wheel = (par, x, y, z) => { const o = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 6, 14), dark); o.position.set(x, y, z); o.rotation.y = Math.PI / 2; o.castShadow = true; par.add(o); };
-    const makers = [
-      (g) => { cyl(wood, 0.42, 0.42, 0.05, 0, 0.7, 0, g, 14); cyl(metal, 0.05, 0.05, 0.7, 0, 0.35, 0, g); for (const sx of [-0.7, 0.7]) { box(wood, 0.4, 0.06, 0.4, sx, 0.42, 0, g); box(wood, 0.4, 0.5, 0.06, sx + (sx > 0 ? 0.18 : -0.18), 0.68, 0, g).rotation.z = 0; } cyl(metal, 0.09, 0.12, 0.3, 0.1, 0.88, 0, g); sph(clay, 0.09, 0.1, 1.08, 0, g); },     // ahwa table + chairs + shisha
-      (g) => { wheel(g, 0, 0.3, 0.45); wheel(g, 0, 0.3, -0.45); box(metal, 0.06, 0.06, 1, 0, 0.6, 0, g); box(wood, 0.7, 0.05, 0.6, 0, 1.15, 0.0, g); for (let i = 0; i < 6; i++) cyl(cream, 0.17, 0.17, 0.07, -0.18 + (i % 3) * 0.18, 1.2 + Math.floor(i / 3) * 0.07, -0.12 + Math.floor(i / 3) * 0.24, g, 10); },   // aish baladi bike
-      (g) => { box(wood, 1.3, 0.5, 0.8, 0, 0.6, 0, g); wheel(g, 0.7, 0.3, 0.3); wheel(g, 0.7, 0.3, -0.3); for (let i = 0; i < 6; i++) sph(i % 2 ? red : S({ color: 0xe0a020, roughness: 0.5 }), 0.14, -0.45 + i * 0.18, 0.95 + (i % 2) * 0.05, (i % 3 - 1) * 0.2, g); box(red, 1.5, 0.05, 1.0, 0, 1.9, 0, g); for (const sx of [-0.7, 0.7]) box(wood, 0.05, 1.3, 0.05, sx, 1.25, 0.4, g); },   // fruit cart + awning
-      (g) => { box(wood, 0.5, 0.9, 0.5, 0, 0.45, 0, g); sph(clay, 0.42, 0, 1.25, 0, g).scale.y = 1.2; cyl(clay, 0.2, 0.22, 0.14, 0, 1.82, 0, g); box(metal, 0.08, 0.1, 0.2, 0.25, 0.95, 0, g); },   // sebil water jar
-      (g) => { cyl(dark, 0.05, 0.07, 3.2, 0, 1.6, 0, g, 8); box(dark, 0.5, 0.05, 0.05, 0.25, 3.0, 0, g); cyl(lamp, 0.12, 0.17, 0.4, 0.5, 2.78, 0, g, 8); },   // fanous post
-      (g) => { box(metal, 1.0, 0.8, 0.7, 0, 0.75, 0, g); wheel(g, 0.55, 0.3, 0.3); wheel(g, 0.55, 0.3, -0.3); cyl(metal, 0.07, 0.07, 0.8, -0.3, 1.55, 0, g); for (let i = 0; i < 3; i++) cyl(i ? cream : red, 0.14, 0.14, 0.14, -0.2 + i * 0.25, 1.22, 0, g, 10); }   // kushari cart
-    ];
-    M1P.g = new THREE.Group(); const N = IS_MOBILE ? 5 : 10;
-    for (let i = 0; i < N; i++) { const g = new THREE.Group(); makers[i % makers.length](g); g.userData.side = i % 2 ? 1 : -1; g.rotation.y = g.userData.side > 0 ? -Math.PI / 2 : Math.PI / 2; M1P.g.add(g); M1P.items.push(g); }
-    M1P.cyc = N * M1P.sp; scene.add(M1P.g);
-  }
-  M1P.g.visible = true; const zn = player.position.z + 12;
-  M1P.items.forEach((g, i) => { const m = (((zn + i * M1P.sp) % M1P.cyc) + M1P.cyc) % M1P.cyc; g.position.set(g.userData.side * 3.95, 0.12, zn - m); });
-}
-const M1_OK = { zaffa: ['عدّيت الزفة من غير خبطة! +250', 'Through the procession untouched! +250', 250], tuktuk: ['فلتّ من التوك توك! +200', 'Dodged the tuk-tuk! +200', 200], men: ['فكّيت رجالة حنكش! درع أم رجب 🛡', "Beat Hankash's men! Om Ragab shield 🛡", 0] };
-function m01Tick() {
-  if (!M1.chShown && MS.state === 'RUNNING') { M1.chShown = true; const l = SETTINGS.lang === 'en' ? 'en' : 'ar'; toast(t('chTitle') + ': ' + M1_CH.map((c) => c[l]).join(' · ')); }
-  for (let i = M1.watch.length - 1; i >= 0; i--) { const w = M1.watch[i]; if (w.k === 'rush' || w.z1 === null) continue;
-    if (w.h0 === null && player.position.z < w.z0 + 3) w.h0 = state.hits;
-    if (w.h0 !== null && player.position.z < w.z1 - 2) { M1.watch.splice(i, 1); if (state.hits === w.h0 && M1_OK[w.k]) { const o = M1_OK[w.k]; state.bonus += o[2]; toast(o[SETTINGS.lang === 'en' ? 1 : 0]); if (w.k === 'men') activatePower('ragab'); SFX.goal(); } } }
-  m01Props();                                                  // fires the heads-up when an event is ~45 m away
-  for (let i = M1.alerts.length - 1; i >= 0; i--) { const a = M1.alerts[i]; if (player.position.z - a.z < 48) { M1.alerts.splice(i, 1); const tx = M1_TXT[a.k][SETTINGS.lang === 'en' ? 1 : 0]; banner(tx, a.k === 'rush' ? 'win' : 'chase'); if (a.k !== 'rush') SFX.warn(); } }
-}
-// Replay challenges (saved on this device): first clear pays the full bonus, later clears pay a small one.
-const M1_CH = [ { id: 'clean', ar: 'من غير ولا خدش', en: 'Flawless run', pts: 400, ok: () => state.hits === 0 },
-  { id: 'alley', ar: 'اكتشف الحارتين السريتين', en: 'Find both secret lanes', pts: 300, ok: () => M1.secDone && M1.sd2 },
-  { id: 'bare', ar: 'جري نضيف · من غير دعم', en: 'Pure run · no power-ups', pts: 350, ok: () => mission.mahshi + mission.tray + mission.ragab === 0 } ];
+const M1_TXT = { cloth: ['غسيل منشور! اتزحلق تحته 👕', 'Washing lines! Slide under 👕'], trike: ['تروسيكل قاطع الشارع! اقفز أو غيّر الحارة', 'A tricycle is crossing! Jump or switch lanes'], soap: ['رغوة صابون! خدلك خطوة جنب', 'Soap suds! Step aside'] };
 const m1save = () => { let o = {}; try { o = JSON.parse(localStorage.getItem('arees.m01ch') || '{}'); } catch {} o.done ||= {}; return o; };
+function m01Slip() { state.lane = state.lane === 1 ? (M1.rng() < 0.5 ? 0 : 2) : 1; sayedFlinch = 0.5; SFX.hit && SFX.hit(); FX.shake = Math.max(FX.shake, 0.2); if (M1.combo >= 3) toast(t('comboLost')); else toast(t('soapSlip')); M1.combo = 0; }
+function m01Combo() { M1.combo++; M1.bestCombo = Math.max(M1.bestCombo, M1.combo); state.bonus += Math.min(M1.combo, 10) * 5; if (M1.combo % 5 === 0) toast('🔥 ×' + M1.combo); }
+function m01Hit(g) { const ty = g.userData.type; if (ty === 'cloth') { stage.style.filter = 'blur(6px)'; M1.blurT = 0.4; } else if (ty === 'trike') FX.shake = Math.max(FX.shake, 0.6); M1.combo = 0; }
+function m01Roof() { M1.roofT = 8; M1.roofCoins = 0; banner(t('roofGo'), 'win'); state.vy = Math.sqrt(2 * RUN.gravity * 2.0); state.grounded = false; SFX.item(); }
+function m01RoofEnd() { if (M1.roofCoins >= 12) { M1.roofDone = true; M1.shield = 1; toast(t('roofDone')); SFX.goal(); npcCelebrate(clock.elapsedTime); } else toast(t('roofMiss')); }
+function m01Alley() { M1.alleyDone = true; M1.multT = 10; M1.hemi0 = hemi.intensity; banner(t('alleyGo'), 'win'); SFX.goal(); }
+function m01Cam() {                                                   // returns true while the 6 s opening pan runs; otherwise raises the camera over the rooftop
+  if (M1.introT > 0) { const u = 1 - M1.introT / 6, e = u * u * (3 - 2 * u), pz = player.position.z;
+    _c0.set(-4.6, 3.3, pz - 8.5); _c1.set(0, PLAYER_Y, pz).add(CAMERA.offset); camTarget.lerpVectors(_c0, _c1, e);
+    _c0.set(1.4, 1.6, pz - 15); _c1.set(0, PLAYER_Y, pz).add(CAMERA.lookAhead); lookTarget.lerpVectors(_c0, _c1, e);
+    const f = 56 + (CAMERA.fov - 56) * e; if (Math.abs(camera.fov - f) > 0.05) { camera.fov = f; camera.updateProjectionMatrix(); } return true; }
+  if (M1.roofT > 0) camTarget.y += 1.3 * Math.min(1, M1.roofT / 0.5, (8 - M1.roofT) / 0.5 + 0.01);
+  return false;
+}
+const _c0 = new THREE.Vector3(), _c1 = new THREE.Vector3();
+function m01Intro(dt) {
+  M1.introT -= dt; const T = 6 - M1.introT; boss.mode = 'hidden'; bogaBossModel.visible = true; bogaBossModel.position.set(1.4, 0, player.position.z - 15); bogaBossModel.rotation.set(0, 0, 0);
+  if (!M1.i1 && T > 0.5) { M1.i1 = 1; bossSay('bogaEnter', 3); }
+  if (M1.introT <= 0) { bogaBossModel.visible = false; bossBubble.classList.remove('show'); camera.fov = CAMERA.fov; camera.updateProjectionMatrix(); }
+}
+function m01Outro(T) {                                                // victory: Bo'ga slides into a stack of crates and flops; Sayed celebrates
+  if (!M1.o1) { M1.o1 = 1; M1.crates = []; for (const l of [0, 1, 2]) { spawn('low', l, bossModel.position.z - 3.4); M1.crates.push(active[active.length - 1]); } }
+  if (M1.o1 === 1 && T > 0.85) { M1.o1 = 2; FX.shake = 0.5; for (const g of M1.crates) if (active.includes(g)) breakCrate(g); }
+}
+function m01Tick(dt) {
+  if (!M1.chShown && MS.state === 'RUNNING') { M1.chShown = true; const l = SETTINGS.lang === 'en' ? 'en' : 'ar'; toast(t('chTitle') + ': ' + M1_CH.map((c) => c[l]).join(' · ')); }
+  for (let i = M1.alerts.length - 1; i >= 0; i--) { const a = M1.alerts[i]; if (player.position.z - a.z < 48) { M1.alerts.splice(i, 1); banner(M1_TXT[a.k][SETTINGS.lang === 'en' ? 1 : 0], 'chase'); SFX.warn(); } }
+  const P = player.position;
+  for (const g of active) { const u = g.userData, ty = u.type, dz = P.z - g.position.z;
+    if (ty === 'trike') { if (dz < 0 && dz > -26) { g.position.x += u.cross * 3.4 * dt; g.rotation.y = u.cross > 0 ? 0 : Math.PI; if (!u.honk && dz > -15) { u.honk = 1; SFX.warn(); FX.shake = Math.max(FX.shake, 0.5); } } }
+    else if (ty === 'puddle') { if (!u.hit && state.grounded && Math.abs(P.x - g.position.x) < 1.0 && Math.abs(dz) < 0.9) { u.hit = 1; m01Slip(); } }
+    else if (ty === 'ramp') { if (!u.hit && Math.abs(P.x - g.position.x) < 1.1 && Math.abs(dz) < 1.2) { u.hit = 1; m01Roof(); } } }
+  if (M1.roofT > 0) { M1.roofT -= dt; if (M1.roofT <= 0) m01RoofEnd(); }
+  if (M1.multT > 0) { M1.multT -= dt; state.bonus += runSpeed() * dt; if (M1.multT <= 0) toast(t('alleyEnd')); }
+  M1.lk += ((M1.multT > 0 ? 1 : 0) - M1.lk) * Math.min(1, dt * 3);
+  if (M1.hemi0 !== undefined && M1.hemi0 !== null) { hemi.intensity = M1.hemi0 * (1 - 0.4 * M1.lk); if (M1.lk < 0.01 && M1.multT <= 0) { hemi.intensity = M1.hemi0; M1.hemi0 = null; } }
+  if (M1.blurT > 0) { M1.blurT -= dt; if (M1.blurT <= 0) stage.style.filter = ''; }
+  if (M1.roof && M1P.roofG && P.z < M1.roof.z1 - 25) M1P.roofG.visible = false;
+  m01Props();
+}
+// ---- Street props: ONE instanced mesh per (shape, material) pair — foul cart, café chairs + table, string lights. 512 px procedural PBR maps. ----
+const M1P = { built: false, sp: 21, items: [], meshes: [], roofG: null };
+function m01Tex(kind) {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  if (kind === 'wood') { x.fillStyle = '#8f6238'; x.fillRect(0, 0, 512, 512); for (let i = 0; i < 260; i++) { x.fillStyle = `rgba(${30 + (i * 13) % 50},${18 + (i * 7) % 25},8,${0.08 + (i % 6) * 0.03})`; x.fillRect(0, (i * 53) % 512, 512, 1 + (i % 4)); } for (let i = 0; i < 40; i++) { x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.arc((i * 97) % 512, (i * 61) % 512, 2 + (i % 3), 0, 7); x.fill(); } }
+  else if (kind === 'rough') { x.fillStyle = '#c0c0c0'; x.fillRect(0, 0, 512, 512); for (let i = 0; i < 1400; i++) { const v = 90 + (i * 37) % 130; x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect((i * 71) % 512, (i * 29) % 512, 3, 3); } }
+  else if (kind === 'metal') { x.fillStyle = '#9aa0a4'; x.fillRect(0, 0, 512, 512); for (let i = 0; i < 400; i++) { const v = 110 + (i * 17) % 90; x.fillStyle = `rgba(${v},${v},${v},.5)`; x.fillRect(0, (i * 41) % 512, 512, 1); } }
+  else { x.fillStyle = '#b4572f'; x.fillRect(0, 0, 512, 512); for (let r = 0; r < 16; r++) for (let q = 0; q < 8; q++) { x.fillStyle = `rgb(${160 + (r * 13 + q * 7) % 40},${80 + (r * 5 + q * 11) % 24},${44 + (q * 3) % 14})`; x.fillRect(q * 64 + (r % 2) * 32 - 32, r * 32 + 1, 62, 30); } }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 2; if (kind === 'wood' || kind === 'roof') t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function m01Props() {
+  if (SETTINGS.quality === 'low') { if (M1P.g) M1P.g.visible = false; return; }
+  if (!M1P.built) {
+    M1P.built = true; const S = (o) => new THREE.MeshStandardMaterial(Object.assign({ envMap: ITEM_ENV, envMapIntensity: 0.55 }, o)), wt = m01Tex('wood'), rt = m01Tex('rough');
+    const mats = { wood: S({ map: wt, bumpMap: wt, bumpScale: 0.8, roughnessMap: rt, roughness: 1 }), metal: S({ map: null, color: 0xa8b0b4, metalness: 0.85, roughnessMap: m01Tex('metal'), roughness: 0.7, envMapIntensity: 0.9 }), dark: S({ color: 0x2a2220, roughness: 0.55 }), cream: S({ color: 0xe8d9b5, roughness: 0.8 }),
+      b0: new THREE.MeshStandardMaterial({ color: 0xffb040, emissive: 0xff9a20, emissiveIntensity: 1.4 }), b1: new THREE.MeshStandardMaterial({ color: 0xff5a4a, emissive: 0xe83a2a, emissiveIntensity: 1.4 }), b2: new THREE.MeshStandardMaterial({ color: 0x6ad0ff, emissive: 0x3aa8e8, emissiveIntensity: 1.4 }) };
+    const geos = { box: new THREE.BoxGeometry(1, 1, 1), cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 12), sph: new THREE.SphereGeometry(0.5, 8, 6) };
+    const q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1), mk = (g, m, p, sc, rz = 0) => ({ g, m, l: new THREE.Matrix4().compose(new THREE.Vector3(...p), q.setFromEuler(e.set(0, 0, rz)).clone(), new THREE.Vector3(...sc)) });
+    const KINDS = {
+      foul: [mk('box', 'wood', [0, 0.7, 0], [1.3, 0.5, 0.8]), mk('cyl', 'metal', [-0.2, 1.12, 0], [0.62, 0.42, 0.62]), mk('cyl', 'dark', [0.45, 0.3, 0.44], [0.56, 0.07, 0.56], Math.PI / 2), mk('cyl', 'dark', [0.45, 0.3, -0.44], [0.56, 0.07, 0.56], Math.PI / 2), mk('box', 'wood', [-0.85, 0.9, 0], [0.5, 0.05, 0.07]), mk('box', 'cream', [0.3, 1.0, 0], [0.4, 0.3, 0.5])],
+      chairs: [mk('cyl', 'wood', [0, 0.72, 0], [0.8, 0.05, 0.8]), mk('cyl', 'metal', [0, 0.36, 0], [0.08, 0.72, 0.08]), ...[1, -1].flatMap((sx) => [mk('box', 'wood', [sx * 0.8, 0.45, 0], [0.42, 0.06, 0.42]), mk('box', 'wood', [sx * 1.0, 0.72, 0], [0.06, 0.5, 0.42]), ...[[-1, -1], [1, 1], [-1, 1], [1, -1]].map(([a, b]) => mk('box', 'dark', [sx * 0.8 + a * 0.17, 0.22, b * 0.17], [0.05, 0.44, 0.05]))])],
+      lights: [mk('box', 'dark', [0, 4.3, 0], [8.8, 0.025, 0.025]), mk('box', 'dark', [-4.4, 2.15, 0], [0.09, 4.3, 0.09]), mk('box', 'dark', [4.4, 2.15, 0], [0.09, 4.3, 0.09]), ...Array.from({ length: 9 }, (_, i) => mk('sph', 'b' + (i % 3), [-3.6 + i * 0.9, 4.17, 0], [0.2, 0.2, 0.2]))]
+    };
+    const order = ['foul', 'lights', 'chairs', 'foul', 'lights', 'chairs', 'chairs', 'foul', 'lights'], N = IS_MOBILE ? 6 : 9; M1P.cyc = N * M1P.sp; M1P.g = new THREE.Group(); scene.add(M1P.g);
+    const buckets = {}; for (let i = 0; i < N; i++) { const kind = order[i % order.length], it = { i, kind, side: i % 2 ? 1 : -1, wz: 0 }; M1P.items.push(it); for (const pt of KINDS[kind]) (buckets[pt.g + '|' + pt.m] ||= []).push({ it, l: pt.l }); }
+    for (const key in buckets) { const [g, m] = key.split('|'), im = new THREE.InstancedMesh(geos[g], mats[m], buckets[key].length); im.castShadow = true; im.frustumCulled = false; im.userData.inst = buckets[key]; M1P.g.add(im); M1P.meshes.push(im); }
+    const rg = new THREE.Group(), rtex = m01Tex('roof'); rtex.repeat.set(2, 22); const roofM = S({ map: rtex, roughness: 0.85 });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 82).rotateX(-Math.PI / 2), roofM); plane.position.set(laneX(0), 0.035, -41); plane.receiveShadow = true; rg.add(plane);
+    const rail = (x, h) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.18, h, 82), mats.cream); m.position.set(x, h / 2, -41); m.castShadow = true; rg.add(m); }; rail(laneX(0) - 1.3, 0.7); rail(laneX(0) + 1.3, 0.2);
+    for (let i = 0; i < 5; i++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.9, 10), mats.metal); tk.position.set(laneX(0) - 1.0, 0.5, -8 - i * 16); tk.castShadow = true; rg.add(tk); }
+    rg.visible = false; M1P.roofG = rg; scene.add(rg);
+  }
+  M1P.g.visible = true; const zn = player.position.z + 12, w = new THREE.Matrix4(), m = new THREE.Matrix4(), pos = new THREE.Vector3(), qq = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), ax = new THREE.Vector3(0, 1, 0);
+  for (const it of M1P.items) it.wz = zn - ((((zn + it.i * M1P.sp) % M1P.cyc) + M1P.cyc) % M1P.cyc);
+  for (const im of M1P.meshes) { const arr = im.userData.inst; for (let k = 0; k < arr.length; k++) { const it = arr[k].it, lights = it.kind === 'lights';
+    pos.set(lights ? 0 : it.side * 3.95, 0.12, it.wz); qq.setFromAxisAngle(ax, lights ? 0 : it.side > 0 ? -Math.PI / 2 : Math.PI / 2); w.compose(pos, qq, one); m.multiplyMatrices(w, arr[k].l); im.setMatrixAt(k, m); } im.instanceMatrix.needsUpdate = true; }
+}
+// ---- Replay challenges (saved on this device) ----
+const M1_CH = [ { id: 'clean', ar: 'جري نضيف: من غير ولا إصابة · +200 عملة', en: 'Flawless: zero hits · +200 coins', ok: () => state.hits === 0, coins: 200 },
+  { id: 'secrets', ar: 'السرّين في جولة واحدة · جاكيت بلون تاني', en: 'Both secrets in one run · new jacket tint', ok: () => M1.roofDone && M1.alleyDone, tint: true },
+  { id: 'gold', ar: 'نجمة دهبية: خلّص في أقل من 65 ثانية', en: 'Gold Star: clear in under 65 s', ok: () => state.time < 65, star: true } ];
 let M1R = [];
 function m01Eval() {
-  if (M1.evaluated) return; M1.evaluated = true; const sv = m1save();
-  M1R = M1_CH.map((c) => { const ok = c.ok(), first = ok && !sv.done[c.id], pts = ok ? (first ? c.pts : 100) : 0; if (ok) { sv.done[c.id] = 1; state.bonus += pts; } return { c, ok, first, pts }; });
-  sv.best = Math.max(sv.best || 0, score()); sv.runs = (sv.runs || 0) + 1; try { localStorage.setItem('arees.m01ch', JSON.stringify(sv)); } catch {}
+  if (M1.evaluated) return; M1.evaluated = true; const sv = m1save(); sv.coins = (sv.coins || 0) + M1.coinsRun;
+  M1R = M1_CH.map((c) => { const ok = c.ok(); let txt = ''; if (ok) { if (c.coins) { sv.coins += c.coins; txt = '+' + c.coins + ' 🪙'; } if (c.tint) { sv.tint = 1; txt = '🎨'; } if (c.star) { sv.star = 1; txt = '⭐'; } } return { c, ok, txt }; });
+  sv.best = Math.max(sv.best || 0, score()); sv.runs = (sv.runs || 0) + 1; M1.wallet = sv.coins; try { localStorage.setItem('arees.m01ch', JSON.stringify(sv)); } catch {}
 }
 function m01ChRows(won, row) {
-  const lang = SETTINGS.lang === 'en' ? 'en' : 'ar', sv = m1save();
-  return M1_CH.map((c, i) => { const r = won && M1R[i]; return row('◆ ' + c[lang], r ? (r.ok ? '✓ +' + r.pts : '—') : (sv.done[c.id] ? '✓' : '○'), r ? r.ok : !!sv.done[c.id]); }).join('');
+  const lang = SETTINGS.lang === 'en' ? 'en' : 'ar', sv = m1save(), flag = { clean: 0, secrets: sv.tint, gold: sv.star };
+  return row('🪙 ' + (lang === 'en' ? 'Coins' : 'العملات'), won ? '+' + M1.coinsRun + ' · ' + (M1.wallet || 0) : String(sv.coins || 0), true)
+    + M1_CH.map((c, i) => { const r = won && M1R[i]; return row('◆ ' + c[lang], r ? (r.ok ? '✓ ' + r.txt : '—') : (flag[c.id] ? '✓' : '○'), r ? r.ok : !!flag[c.id]); }).join('');
 }
+function m01Tint() {
+  const on = STAGE.n === 1 && !!m1save().tint, tc = new THREE.Color(0.55, 1.0, 0.95);
+  sayed.traverse((o) => { if (!o.isMesh || !o.material) return; for (const m of (Array.isArray(o.material) ? o.material : [o.material])) { if (!m.color) continue; m.userData.c0 ||= m.color.clone(); m.color.copy(m.userData.c0); if (on) m.color.multiply(tc); } });
+}
+function m01Stage() {
+  if (M1P.built) { M1P.g.visible = false; M1P.roofG.visible = false; }
+  const sc = sun.shadow.camera; if (STAGE.n === 1) Object.assign(sc, { left: -7, right: 7, top: 14, bottom: -28, far: 50 }); else Object.assign(sc, { left: -10, right: 10, top: 20, bottom: -40, far: 60 }); sc.updateProjectionMatrix();
+  stage.style.filter = '';
+}
+m01Reset();
 const track = { row: 0, z: TRACK.startZ, power: 0 };
 function updateTrack() {
   // Spawn rows (and the pickups in the gap after each row) until just past the fog; recycle once behind the camera.
@@ -3855,14 +3916,14 @@ function updateTrack() {
   const bossZ = -M01.length * M01.at.BOSS_ENCOUNTER;
   while (track.z > player.position.z - 100 && track.z > bossZ + 12) {
     const i = track.row % TRACK.rows.length, d = -track.z, intro = d < M01.length * M01.at.RUNNING, chase = d >= M01.length * M01.at.ESCALATION;
-    if (STAGE.n === 1) {                                                 // M01 upgrade: fair procedural rows + events + secret alley
-      const row = m01Next(d); for (const [type, lane] of row.obs) spawn(type, lane, track.z);
-      if (row.ev) { M1.alerts.push({ k: row.ev, z: track.z }); M1.watch.push({ k: row.ev, z0: track.z, z1: null, h0: null }); }
-      if (row.evLast && M1.watch.length) M1.watch[M1.watch.length - 1].z1 = track.z;
+    if (STAGE.n === 1) {                                                 // M01 gameplay layer
+      const row = m01Next(d);
+      for (const [type, lane] of row.obs) { spawn(type, lane, track.z); const g = active[active.length - 1]; if (type === 'trike') g.userData.cross = lane === 0 ? 1 : -1; if (row.gate && type === 'low') g.userData.alley = true; }
+      if (row.ev) M1.alerts.push({ k: row.ev, z: track.z });
+      if (row.ramp) { spawn('ramp', 0, track.z - 2); M1.roof = { z0: track.z - 4, z1: track.z - 86 }; if (M1P.roofG) { M1P.roofG.position.z = M1.roof.z0; M1P.roofG.visible = true; } }
       const next = M01.powerups[track.power];
       if (next && d + 10 >= next[0]) { spawn(next[1], row.open, track.z - 6); track.power++; }
-      else if (row.sec) for (let c = 0; c < 4; c++) { spawn('cane', row.secL, track.z - 3 - c * 1.6); pickups[pickups.length - 1].userData.secret = row.sec; }
-      else if (row.rush) for (const l of [0, 1, 2]) for (let c = 0; c < 3; c++) spawn('cane', l, track.z - 2 - c * 3);
+      else if (row.coins) for (let c = 0; c < 4; c++) { spawn('cane', 0, track.z - 2 - c * 2.8); pickups[pickups.length - 1].userData.secret = 3; }
       else if (mission.cane < MISSION.cane) for (let c = 0; c < TRACK.canesPerGap; c++) spawn('cane', row.open, track.z - 3 - c * 1.5);
       track.row++; track.z -= row.sp || (chase ? M01.escSpacing : TRACK.spacing); continue;
     }
@@ -3962,12 +4023,8 @@ function collectPickups() {
     const g = pickups[i]; if (!g) continue;                             // M10.4 fix: the list may shrink mid-loop
     if (!hitBox(g, PICKUP[g.userData.type].hit)) continue;
     const type = g.userData.type;
-    if (type === 'cane' && g.userData.secret) {                          // M01 secret-route canes: own counters, never count toward the 50
-      const si = g.userData.secret - 1, S = M1_SECS[si]; M1.sg[si]++; M1.secGot++; state.bonus += 40; recycle(pickups, i, true); SFX.cane();
-      if (M1.sg[si] === 1) toast(t(si ? 'toastSecret2' : 'toastSecret'));
-      if (M1.sg[si] >= S.need && !(si ? M1.sd2 : M1.secDone)) { if (si) { M1.sd2 = true; activatePower('ragab'); } else M1.secDone = true; state.bonus += S.pts; setTimeout(SFX.goal, 120); toast(t(si ? 'toastSecretDone2' : 'toastSecretDone')); npcCelebrate(clock.elapsedTime);
-        const pop = document.createElement('div'); pop.className = 'pop big'; pop.dir = 'ltr'; pop.textContent = '+' + S.pts; popsEl.appendChild(pop); setTimeout(() => pop.remove(), 1100); }
-      continue;
+    if (type === 'cane' && g.userData.secret) {                          // M01 rooftop coins: +1 coin each, never count toward the 50 canes
+      if (M1.roofCoins < 15) { M1.roofCoins++; M1.coinsRun++; } state.bonus += 10; recycle(pickups, i, true); SFX.cane(); continue;
     }
     if (type === 'cane') {
       if (mission.cane >= MISSION.cane) { recycle(pickups, i); continue; }   // the bonus counts once
@@ -3992,6 +4049,7 @@ function caneBonus() {
 function takeHit() {
   if (DEBUG.god) return;                                                 // test hook only
   if (typeof CBT !== 'undefined' && CBT.guard > 0) { CBT.blocks++; CBT.ammo = Math.min(CBT.max, CBT.ammo + 1); state.invuln = 0.4; FX.shake = Math.max(FX.shake, 0.15); SFX.smash && SFX.smash(); warn('🛡', 'warnStomp'); return; }   // M33: a raised guard soaks the hit and hands back a tool
+  if (STAGE.n === 1 && M1.shield > 0) { M1.shield--; state.invuln = 0.8; FX.shake = Math.max(FX.shake, 0.3); SFX.smash && SFX.smash(); warn('🛡', 'warnStomp'); toast(t('shieldUsed')); return; }
   state.hits++;
   sayedFlinch = 0.35; SFX.hit(); feedbackHit(); if (state.hits < RUN.maxHits) heroSay('hit');
   if (PWR.tray > 0) endPower('tray');                                    // a crash ends the sharbat rush
@@ -4019,15 +4077,15 @@ function checkCollisions(dt) {
     player.visible = state.invuln <= 0 || Math.floor(state.invuln * 10) % 2 === 0; // blink
     return;
   }
-  for (const g of active) if ((!CRATES.breaks || g.userData.type !== 'low') && hitBox(g, OBSTACLE[g.userData.type].hit)) { takeHit(); return; }
+  for (const g of active) if ((!CRATES.breaks || g.userData.type !== 'low') && hitBox(g, OBSTACLE[g.userData.type].hit)) { if (STAGE.n === 1) m01Hit(g); takeHit(); return; }
 }
 
 // M10.3: an obstacle in Sayed's lane that passes behind him without a hit = jumped over / slid under → small reward cue.
 function checkDodges() {
   const p = player.position;
   for (const g of active) { const u = g.userData;
-    if (u.passed || g.position.z < p.z + 0.6) continue; u.passed = true;
-    if (state.invuln <= 0 && !state.over && Math.abs(p.x - g.position.x) < 0.9) feedbackDodge(); }
+    if (u.passed || g.position.z < p.z + 0.6) continue; u.passed = true; if (u.type === 'puddle' || u.type === 'ramp') continue;
+    if (state.invuln <= 0 && !state.over && Math.abs(p.x - g.position.x) < 0.9) { feedbackDodge(); if (STAGE.n === 1) m01Combo(); } }
 }
 
 // ======================= M12: Mission 01 — explicit state machine =======================
@@ -4273,7 +4331,7 @@ function bossEnter() {
   Object.assign(boss, { mode: 'enter', t: 0, lane: 1, y: 0, vy: 9 });   // leaps back into the centre lane and lands in front of Sayed
   bossModel.visible = true; banner(t('bossTitle'), 'boss'); SFX.bossIn();
 }
-function nextVolley() { const stage = BOSS_CFG.hp - boss.hp, list = PATTERNS[Math.min(stage, PATTERNS.length - 1)];
+function nextVolley() { const stage = BOSS_CFG.hp - boss.hp, list = STAGE.n === 1 ? (() => { const o = (Math.random() * 3) | 0; return [[['block', [0, 1, 2].filter((x) => x !== o)]]]; })() : PATTERNS[Math.min(stage, PATTERNS.length - 1)];
   boss.volley = list.slice(); boss.attack = 0; boss.wave++; boss.mode = 'telegraph'; boss.t = 0; showTelegraph(); }
 function showTelegraph() {
   const pat = boss.volley[boss.attack]; clearTelegraph();
@@ -4290,7 +4348,7 @@ function startSlam() {                                                // M01 att
   Object.assign(boss, { mode: 'slamTele', t: 0, lane: state.lane }); clearTelegraph(); warn(t('warnSlam'), 'warnJump'); SFX.warn(); bossSay('bogaSlam', 1.6); boss.log.push('slam');
 }
 function startCharge() {
-  Object.assign(boss, { mode: 'chargeTele', t: 0, lane: state.lane }); clearTelegraph(); warn(t('warnCharge'), 'warnLane'); SFX.warn(); bossSay('bogaCharge', 1.6); boss.log.push('charge');
+  Object.assign(boss, { mode: 'chargeTele', t: 0, lane: 1 }); clearTelegraph(); warn(t('warnCharge'), 'warnLane'); SFX.warn(); bossSay('bogaCharge', 1.6); boss.log.push('charge');
 }
 function startTrip() {
   Object.assign(boss, { mode: 'trip', t: 0, lane: [0, 2, 1][boss.wave % 3] }); stars.visible = true;
@@ -4317,12 +4375,12 @@ function updateBoss(dt) {
     if (u.t > 0.55 && u.y === 0 && !u.landed) { u.landed = true; FX.shake = 0.3; SFX.hit(); bossSay('bogaEnter', 3); }
     if (u.t > 2.6) nextVolley();
   } else if (u.mode === 'telegraph') {
-    if (u.t >= (STAGE.n === 1 ? BOSS_CFG.telegraph - 0.1 * (BOSS_CFG.hp - boss.hp) : BOSS_CFG.telegraph)) { throwPattern(); u.mode = 'gap'; u.t = 0; }
+    if (u.t >= (STAGE.n === 1 ? 0.8 : BOSS_CFG.telegraph)) { throwPattern(); u.mode = 'gap'; u.t = 0; }
   } else if (u.mode === 'gap') {
-    if (u.t >= BOSS_CFG.gap) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1 && BOSS_CFG.hp - boss.hp >= 2) startSlam(); else if (STAGE.n === 1 && BOSS_CFG.hp - boss.hp >= 1) startCharge(); else startTrip(); }
+    if (u.t >= BOSS_CFG.gap) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1) startCharge(); else startTrip(); }
   } else if (u.mode === 'slamTele') {
     u.y += (2.6 - u.y) * (1 - Math.exp(-dt * 7)); u.rel += (6.5 - u.rel) * (1 - Math.exp(-dt * 3)); tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xffd23a);
-    if (u.t >= 0.85) { u.mode = 'slam'; u.t = 0; u.vy = -30; }
+    if (u.t >= 0.8) { u.mode = 'slam'; u.t = 0; u.vy = -30; }
   } else if (u.mode === 'slam') {
     u.vy -= 30 * dt; u.y = Math.max(0, u.y + u.vy * dt);
     if (u.y === 0) { clearTelegraph(); FX.shake = 0.5; SFX.hit(); u.mode = 'slamWave'; u.t = 0; slamRing.visible = true; }
@@ -4331,12 +4389,12 @@ function updateBoss(dt) {
     if (u.t >= 0.65) { slamRing.visible = false; if (player.position.y < PLAYER_Y + 0.3 && state.invuln <= 0 && PWR.mahshi <= 0) takeHit(); startTrip(); }
   } else if (u.mode === 'chargeTele') {                                  // M01: Bo'ga paws the ground, a red lane lights up — step out of it or jump
     tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xe8343a); FX.shake = Math.max(FX.shake, 0.04);
-    if (u.t >= 0.95 - 0.1 * (BOSS_CFG.hp - boss.hp - 1)) { u.mode = 'charge'; u.t = 0; SFX.throw(); }
+    if (u.t >= 0.8) { u.mode = 'charge'; u.t = 0; SFX.throw(); }
   } else if (u.mode === 'charge') {
     u.rel -= 26 * dt; FX.shake = Math.max(FX.shake, 0.07); tele[u.lane].visible = true;
     if (u.rel <= 2.6) { u.rel = 2.6; clearTelegraph(); const lane = u.lane;
-      if (Math.abs(player.position.x - bossModel.position.x) < 1.05 && player.position.y < PLAYER_Y + 0.7 && state.invuln <= 0 && PWR.mahshi <= 0) takeHit();
-      startTrip(); u.lane = lane; }                                      // he skids on the banana peels: a clean dodge opens the stomp window
+      if (Math.abs(player.position.x - bossModel.position.x) < 1.05 && state.slideLeft <= 0 && state.invuln <= 0 && PWR.mahshi <= 0) takeHit();
+      startSlam(); }                                      // he skids on the banana peels: a clean dodge opens the stomp window
   } else if (u.mode === 'trip') {                                        // slips on his own mess — telegraphed opening
     if (u.t >= BOSS_CFG.dizzy) { u.mode = 'dizzy'; u.t = 0; }
   } else if (u.mode === 'dizzy') {                                       // stands still (dazed) while Sayed closes in
@@ -4444,7 +4502,7 @@ function victoryStart() {
   state.invuln = 0; player.visible = true; banner(t('bannerWin'), 'win'); npcCelebrate(clock.elapsedTime, 6); SFX.goal(); setTimeout(() => zaghrouta(0), 400);
 }
 function updateVictory(dt) {
-  MS.victoryT += dt; const T = MS.victoryT;
+  MS.victoryT += dt; const T = MS.victoryT; if (STAGE.n === 1) m01Outro(T);
   MS.vSpeed = Math.max(0, MS.vSpeed - dt * 11);                          // Sayed runs out of steam and stops to celebrate
   if (STAGE.n === 10) MS.teaser = true;                                  // M31: Hankash is the boss in Mission 10 — no teaser
   if (T > 2.2 && !MS.teaser) {                                           // Hankash teaser (story setup for later missions)
@@ -4452,7 +4510,7 @@ function updateVictory(dt) {
     hankBubble.textContent = t(SEL.char === 'sayed' ? 'hankTease' : 'hankTeaseAny'); speak('hankash', SEL.char === 'sayed' ? 'hankash_tease' : 'hankash_teaseAny', hankBubble.textContent); SFX.bossIn();
   }
   if (hankash.visible && T > 5.4) { hankash.position.x += dt * 3; }
-  if (T > (STAGE.n === 10 ? 4.4 : 6.2) && !state.over) { hankash.visible = false; endRun(true); }
+  if (T > (STAGE.n === 10 ? 4.4 : STAGE.n === 1 ? 5 : 6.2) && !state.over) { hankash.visible = false; endRun(true); }
 }
 function victoryCamera(dt, t) {
   const p = player.position; vicCam.set(-2.4, 2.3, p.z + 4.2); vicLook.set(0.8, 1.2, p.z - 5);
@@ -4466,6 +4524,7 @@ function victoryCamera(dt, t) {
 // ---- One fixed gameplay step (the frame loop may run several when a test speeds time up) ----
 function stepGame(dt) {
   if (GM.on) { stepGM(dt); return; }
+  if (STAGE.n === 1 && M1.introT > 0) { m01Intro(dt); return; }
   if (MS.state === 'VICTORY') { updatePlayer(dt); updateEnv(); updateBoss(dt); updateVictory(dt); collectPickups(); return; }
   updatePlayer(dt);
   updateTrack();
@@ -4475,7 +4534,7 @@ function stepGame(dt) {
   updatePowers(dt);
   checkCollisions(dt);
   checkDodges();
-  if (STAGE.n === 1) m01Tick();
+  if (STAGE.n === 1) m01Tick(dt);
   updateMission(dt);
   state.time += dt;
 }
@@ -4588,7 +4647,7 @@ function show(mode) {
 }
 const go = (mode) => { if (ui.mode !== mode) nav.push(ui.mode); show(mode); };
 const back = () => show(nav.pop() || 'menu');
-function startMission() { STAGE.n = SEL.level; if (M1P.g) M1P.g.visible = false; s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
+function startMission() { STAGE.n = SEL.level; m01Stage(); s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) M1.introT = /[?&]intro6=0\b/.test(location.search) ? 0 : 6; m01Tint(); if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
 function goMenu() { stopVoice(); STAGE.n = 1; BOSS_CFG.hp = 3; setBossModel(false); setObstacleSkin('market'); restart(); nav.length = 0; ui.runActive = false; show('menu'); }
 function pauseGame() { if (ui.mode === 'playing' && !state.over) { stopVoice(); show('pause'); } }
 function resumeGame() { if (ui.mode === 'pause') { clock.getDelta(); show('playing'); } } // drop paused time
@@ -4602,7 +4661,7 @@ const L10N = {
         done: 'تم', paused: 'استراحة', resume: 'كمّل', restart: 'إعادة المهمة', mainMenu: 'القائمة الرئيسية', missionComplete: 'المهمة اكتملت!', score: 'النقاط', time: 'الوقت',
         hearts: 'الفرص الباقية', continue: 'كمّل', replay: 'العب تاني', runOver: 'انتهت الجولة', cane: 'القصب', retry: 'حاول تاني', back: 'رجوع', sound: 'الصوت', on: 'تشغيل', off: 'إيقاف',
         playable: 'متاحة', storyOnly: 'في القصة بس', villain: 'شرير', comingSoon: 'قريبًا', needsRide: 'محتاجة مواصلة', mission: 'المهمة', goalCane: 'قصب', goalMahshi: 'حلة محشي', goalTray: 'صينية شربات',
-        goalCaneLong: 'عيدان قصب', goalTrayLong: 'صينية كاسات شربات', toastMahshi: 'حلة المحشي معانا ✓', toastTray: 'صينية الشربات معانا ✓', toastCane: '50 عود قصب! بونص +500', warnCharge: '⚠ هيجري عليك! غيّر الحارة أو اقفز!', warnSlam: '⚠ هيخبط الأرض! اقفز لما توصلك الموجة!', bogaSlam: 'استنى بس... هنزل عليك زي الجبل!', toastSecret2: '🤫 حارة السطوح! زحلق واقفز', toastSecretDone2: '🛡 كنز السطوح! +500 ودرع أم رجب', bogaCharge: 'هدوسّك يا سيد! جاي جاي!', bogaPhase2: 'بؤجة اتعصّب! 🔥', bogaPhase3: 'بؤجة هاج خلاص! آخر جولة!', toastSecret: '🤫 لقيت حارة السر! كمّل القصب الدهبي', toastSecretDone: '✨ كنز الحارة! +600', chTitle: 'تحديات', left: 'فاضل: ',
+        goalCaneLong: 'عيدان قصب', goalTrayLong: 'صينية كاسات شربات', toastMahshi: 'حلة المحشي معانا ✓', toastTray: 'صينية الشربات معانا ✓', toastCane: '50 عود قصب! بونص +500', warnCharge: '⚠ هيجري في النص! اتزحلق أو غيّر الحارة!', soapSlip: 'رغوة! اتزحلقت', comboLost: 'الكومبو اتصفّر!', roofGo: 'السطوح! لمّ العملات 🪙', roofDone: '🛡 15 عملة + درع بضربة', roofMiss: 'السطوح خلصت', alleyGo: 'الحارة الضيقة! نقط ×2 لمدة 10 ثواني', alleyEnd: 'خلصت الحارة', shieldUsed: 'الدرع شال الضربة!', warnSlam: '⚠ هيخبط الأرض! اقفز لما توصلك الموجة!', bogaSlam: 'استنى بس... هنزل عليك زي الجبل!', toastSecret2: '🤫 حارة السطوح! زحلق واقفز', toastSecretDone2: '🛡 كنز السطوح! +500 ودرع أم رجب', bogaCharge: 'هدوسّك يا سيد! جاي جاي!', bogaPhase2: 'بؤجة اتعصّب! 🔥', bogaPhase3: 'بؤجة هاج خلاص! آخر جولة!', toastSecret: '🤫 لقيت حارة السر! كمّل القصب الدهبي', toastSecretDone: '✨ كنز الحارة! +600', chTitle: 'تحديات', left: 'فاضل: ',
         hint: 'اسحب يمين أو شمال للحارة · لفوق قفز · لتحت تزحلق', dodge: 'حلوة!', notBuilt: 'المهمة دي لسه بتتعمل', selected: 'مختارة', previewOnly: 'معاينة بس', completed: 'خلصتها ✓',
         loseSub: 'وصلت لـ {p}% من الطريق', loseSubBoss: 'بؤجة كسب الجولة دي... جرّب تاني!', nextSoon: 'المهمة الجاية قريبًا',
         phaseRunning: 'الشارع بيزحم... ركّز!', bannerChase: 'مطاردة! بؤجة قدامك', radioBoss: 'الراديو هيرجع بعد الخناقة', bannerWin: 'هزمت بؤجة!',
@@ -4622,7 +4681,7 @@ const L10N = {
         done: 'Done', paused: 'Paused', resume: 'Resume', restart: 'Restart mission', mainMenu: 'Main menu', missionComplete: 'Mission complete!', score: 'Score', time: 'Time',
         hearts: 'Lives left', continue: 'Continue', replay: 'Replay', runOver: 'Run over', cane: 'Cane', retry: 'Try again', back: 'Back', sound: 'Sound', on: 'On', off: 'Off',
         playable: 'Playable', storyOnly: 'Story only', villain: 'Villain', comingSoon: 'Coming soon', needsRide: 'Needs a ride', mission: 'Mission', goalCane: 'Cane', goalMahshi: 'Mahshi pot', goalTray: 'Sharbat tray',
-        goalCaneLong: 'Sugarcane sticks', goalTrayLong: 'Tray of sharbat glasses', toastMahshi: 'Got the mahshi pot ✓', toastTray: 'Got the sharbat tray ✓', toastCane: '50 sugarcane sticks! Bonus +500', warnCharge: '⚠ He is charging! Change lane or jump!', warnSlam: '⚠ Ground slam! Jump when the wave arrives!', bogaSlam: 'Hold on... I am coming down like a mountain!', toastSecret2: '🤫 Rooftop lane! Slide and jump', toastSecretDone2: '🛡 Rooftop treasure! +500 and Om Ragab shield', bogaCharge: "I'll flatten you, Sayed! Here I come!", bogaPhase2: "Bo'ga is furious! 🔥", bogaPhase3: "Bo'ga lost it! Final round!", toastSecret: '🤫 Secret alley found! Keep the golden cane coming', toastSecretDone: '✨ Alley treasure! +600', chTitle: 'Challenges', left: 'Still need: ',
+        goalCaneLong: 'Sugarcane sticks', goalTrayLong: 'Tray of sharbat glasses', toastMahshi: 'Got the mahshi pot ✓', toastTray: 'Got the sharbat tray ✓', toastCane: '50 sugarcane sticks! Bonus +500', warnCharge: '⚠ Mid-lane charge! Slide or switch lane!', soapSlip: 'Suds! You slipped', comboLost: 'Combo reset!', roofGo: 'Rooftop! Grab the coins 🪙', roofDone: '🛡 15 coins + 1-hit shield', roofMiss: 'Rooftop over', alleyGo: 'Back alley! ×2 points for 10 s', alleyEnd: 'Alley over', shieldUsed: 'Shield took the hit!', warnSlam: '⚠ Ground slam! Jump when the wave arrives!', bogaSlam: 'Hold on... I am coming down like a mountain!', toastSecret2: '🤫 Rooftop lane! Slide and jump', toastSecretDone2: '🛡 Rooftop treasure! +500 and Om Ragab shield', bogaCharge: "I'll flatten you, Sayed! Here I come!", bogaPhase2: "Bo'ga is furious! 🔥", bogaPhase3: "Bo'ga lost it! Final round!", toastSecret: '🤫 Secret alley found! Keep the golden cane coming', toastSecretDone: '✨ Alley treasure! +600', chTitle: 'Challenges', left: 'Still need: ',
         hint: 'Swipe left/right to change lane · up to jump · down to slide', dodge: 'Nice!', notBuilt: 'This mission is still in production', selected: 'Selected', previewOnly: 'Preview only', completed: 'Completed ✓',
         loseSub: 'You made it {p}% of the way', loseSubBoss: "Bo'ga won this round... try again!", nextSoon: 'Next mission coming soon',
         phaseRunning: 'The street is getting busy... focus!', bannerChase: "Chase! Bo'ga is ahead", radioBoss: 'The radio is back after the fight', bannerWin: "You beat Bo'ga!",
@@ -6073,7 +6132,7 @@ function updateCamera(dt, snap = false) {
   // Follow x partially and ignore jump height, so the frame stays steady.
   const px = player.position.x * (GM.on ? GM.camFollow : CAMERA.followX), pz = player.position.z;
   if (GM.on) { camTarget.set(px, 0, pz).add(GM.camOff); lookTarget.set(px, 0, pz).add(GM.camLook); const gf = gmFov(); if (Math.abs(camera.fov - gf) > 0.05) { camera.fov += (gf - camera.fov) * (snap ? 1 : Math.min(1, dt * 4)); camera.updateProjectionMatrix(); } }
-  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); }
+  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); if (STAGE.n === 1 && m01Cam()) snap = true; }
   const t = snap ? 1 : 1 - Math.exp(-(GM.on ? GM.camDamp : CAMERA.damping) * dt); // frame-rate independent smoothing
   camera.position.lerp(camTarget, t);
   if (FX.shake > 0) { FX.shake = Math.max(0, FX.shake - dt); const a = FX.shake * 0.25; camera.position.x += (Math.random() - 0.5) * a; camera.position.y += (Math.random() - 0.5) * a; }
@@ -8236,7 +8295,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__fx = PFX; window.__arees = { M1, M1_CH, M1_SECS, M1P, startSlam, m01Next, m01Reset, m01Eval, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__fx = PFX; window.__arees = { M1, M1_CH, M1P, M1_PCT, startSlam, m01Next, m01Reset, m01Eval, m01Tint, m01Roof, m01Alley, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
