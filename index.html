@@ -1946,10 +1946,11 @@ const MISSION = { cane: 50, caneBonus: 500 };
 // M12 Mission 01 structure. Progress = distance run until the boss gate (80 %), then Bo'ga's health (80 → 100 %).
 // Values are first-pass tuning (placeholders until playtesting).
 const M01 = {
-  length: 520,                                         // metres for 100 % of the run; the boss starts at 80 % (416 m) — short enough for the <65 s Gold Star challenge
+  length: 735, speed: 11,                              // M01: 735 m at 11 m/s (×1.25 chase) → boss gate at ≈51 s of play; other missions get 1000 m / RUN.speed via m01Stage()
   at: { RUNNING: 0.2, ESCALATION: 0.6, BOSS_ENCOUNTER: 0.8 },
   escSpeed: 1.25, escSpacing: 11,                      // chase: faster run, denser rows
-  powerups: [[110, 'mahshi'], [190, 'tray'], [255, 'ragab'], [320, 'mahshi'], [385, 'ragab']]   // metres → item, in the open lane
+  powerups: [[110, 'mahshi'], [190, 'tray'], [255, 'ragab'], [320, 'mahshi'], [385, 'ragab']],   // metres → item, in the open lane
+  pu1: [[150, 'mahshi'], [260, 'tray'], [350, 'ragab'], [435, 'mahshi'], [525, 'ragab']]          // M01 schedule on the 710 m track
 };
 const POWER = { mahshi: { time: 7 }, tray: { time: 5, speed: 1.5 }, ragab: { time: 12, charges: 3 } };
 const BOSS_CFG = { hp: 3, ahead: 20, stalk: 42, telegraph: 1.0, gap: 1.25, dizzy: 0.6, recover: 1.3 };
@@ -3440,7 +3441,26 @@ function buildDesertStack(O) {                     // switch lanes: tumbled lime
 }
 
 // Per type: how to build it, and its collision box (half-width x, height range y0..y1, half-depth z).
+const M1MAT = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65, metalness: 0.1 }), M1CONF = new THREE.PointsMaterial({ size: 0.16, vertexColors: true });
+function m1merge(parts) {                                              // [geometry, [x,y,z], hex, [rx,ry,rz]?] → ONE vertex-coloured geometry (1 draw call per prop)
+  const P = [], N = [], C = [], c = new THREE.Color(), m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1);
+  for (const [geo, pos, col, rot] of parts) { const g = geo.index ? geo.toNonIndexed() : geo.clone(); m.compose(new THREE.Vector3(...pos), q.setFromEuler(e.set(...(rot || [0, 0, 0]))), one); g.applyMatrix4(m); c.setHex(col);
+    const pa = g.attributes.position.array, na = g.attributes.normal.array; for (let i = 0; i < pa.length; i++) { P.push(pa[i]); N.push(na[i]); } for (let i = 0; i < pa.length / 3; i++) C.push(c.r, c.g, c.b); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); o.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); o.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return o;
+}
 const OBSTACLE = {
+  tuk: { hit: { x: 0.75, y0: 0, y1: 1.5, z: 1.0 }, build: (g) => {                      // M01 traffic: tuk-tuk facing Sayed — honks + flashes its headlights, switch lane
+    const B = THREE.BoxGeometry, Cy = THREE.CylinderGeometry, S = THREE.SphereGeometry, H = Math.PI / 2;
+    const m = new THREE.Mesh(m1merge([[new B(1.15, 0.5, 1.7), [0, 0.55, 0], 0xe0b020], [new B(1.1, 0.75, 1.0), [0, 1.2, -0.25], 0x2f7f55], [new B(1.25, 0.08, 1.2), [0, 1.62, -0.2], 0x222222], [new B(0.9, 0.4, 0.05), [0, 1.25, 0.28], 0x1a2a33],
+      [new Cy(0.28, 0.28, 0.14, 12), [0.62, 0.28, -0.55], 0x1a1a1a, [0, 0, H]], [new Cy(0.28, 0.28, 0.14, 12), [-0.62, 0.28, -0.55], 0x1a1a1a, [0, 0, H]], [new Cy(0.24, 0.24, 0.12, 12), [0, 0.25, 0.75], 0x1a1a1a, [0, 0, H]]]), M1MAT); m.castShadow = true; g.add(m);
+    const hl = new THREE.Mesh(m1merge([[new S(0.11, 8, 6), [-0.35, 0.62, 0.87], 0xffffff], [new S(0.11, 8, 6), [0.35, 0.62, 0.87], 0xffffff]]), new THREE.MeshStandardMaterial({ color: 0xfff2c0, emissive: 0xffe090, emissiveIntensity: 0.6 })); g.add(hl); g.userData.hl = hl; } },
+  zaffa: { hit: { x: 0.75, y0: 0, y1: 2.0, z: 0.9 }, build: (g) => {                    // M01 wedding procession: drummer, singer, dancer + confetti — two lanes of it, one open gap
+    const B = THREE.BoxGeometry, Cy = THREE.CylinderGeometry, S = THREE.SphereGeometry, parts = [];
+    [[-0.5, 0xc03030, -0.2], [0, 0xe8c040, 0.3], [0.5, 0x2a9aa0, -0.2]].forEach(([x, col, z]) => { parts.push([new Cy(0.2, 0.25, 0.95, 8), [x, 0.5, z], col], [new S(0.17, 8, 6), [x, 1.22, z], 0xc89868]); });
+    parts.push([new Cy(0.3, 0.3, 0.3, 12), [0, 0.85, 0.62], 0x6a3a1a, [Math.PI / 2, 0, 0]], [new Cy(0.03, 0.03, 2.0, 5), [0.55, 1.0, -0.2], 0xe8c040], [new B(0.5, 0.3, 0.03), [0.8, 1.85, -0.2], 0xc03030]);
+    const m = new THREE.Mesh(m1merge(parts), M1MAT); m.castShadow = true; g.add(m);
+    const P = [], C = [], cc = new THREE.Color(), pal = [0xff5a5a, 0xffd23a, 0x6ad0ff, 0xffffff, 0xff9ad0]; for (let i = 0; i < 26; i++) { P.push(((i * 37) % 17) / 17 * 1.8 - 0.9, 1.3 + ((i * 53) % 13) / 13 * 1.2, ((i * 29) % 11) / 11 * 1.4 - 0.7); cc.setHex(pal[i % 5]); C.push(cc.r, cc.g, cc.b); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); const pts = new THREE.Points(geo, M1CONF); g.add(pts); g.userData.conf = pts; } },
   low: { // jump over — crate
     hit: { x: 0.7, y0: 0, y1: 0.9, z: 0.5 },
     build: (g) => buildCrate(g)
@@ -3757,7 +3777,7 @@ function spawn(type, lane, z) {
   if (!g) { g = new THREE.Group(); g.userData.type = type; DEFS[type].build(g, MATS); scene.add(g); }
   g.position.set(laneX(lane), 0, z);
   g.rotation.y = 0;
-  g.userData.lane = lane; g.userData.passed = false; g.userData.secret = 0; g.userData.hit = 0; g.userData.honk = 0; g.userData.alley = false;
+  g.userData.lane = lane; g.userData.passed = false; g.userData.secret = 0; g.userData.hit = 0; g.userData.honk = 0; g.userData.alley = false; g.userData.sw = 0; g.userData.swT = 0;
   if (type === 'low') g.userData.content = rollCrate();
   g.visible = true;
   (PICKUP[type] ? pickups : active).push(g);
@@ -3769,46 +3789,49 @@ function setObstacleSkin(skin) {                                       // purge 
 }
 // ---- M01 gameplay layer (Mission 01 ONLY): events @25/55/77 %, secret routes @35/70 %, instanced props, challenges ----
 const M1 = {};
-const M1_PCT = { cloth: 0.25, ramp: 0.35, trike: 0.55, gate: 0.70, soap: 0.77 };      // share of the full run (the boss owns the last 20 %, so the puddle sits at 77 %)
+const M1_PCT = { warm: 0.217, chaos: 0.527, ramp: 0.35, gate: 0.70 };      // beats on the 710 m track: warm-up → zaffa + rooftop → chaos → gate; the boss owns the last 20 %
+const M1_SCH = [['zaffa', 0.24], ['zaffa', 0.29], ['ramp', 0.35], ['zaffa', 0.41], ['zaffa', 0.46], ['swerve', 0.53], ['combo', 0.565], ['swerve', 0.61], ['combo', 0.645], ['gate', 0.70]];
 const m1seed = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
-function m01Reset() { Object.assign(M1, { rng: m1seed((Math.random() * 1e9) | 0), open: 1, last: '', n: 0, evQ: [], ev: {}, alerts: [], combo: 0, bestCombo: 0, roofT: 0, roof: null, roofCoins: 0, roofDone: false, multT: 0, lk: 0, alleyDone: false, shield: 0, introT: 0, chShown: false, evaluated: false, blurT: 0, rampD: -1, coinsRun: 0, i1: 0, o1: 0, crates: [] }); if (M1P.roofG) M1P.roofG.visible = false; }
+function m01Reset() { Object.assign(M1, { rng: m1seed((Math.random() * 1e9) | 0), open: 1, last: '', n: 0, si: 0, evQ: [], ev: {}, alerts: [], combo: 0, bestCombo: 0, roofT: 0, roof: null, roofCoins: 0, roofDone: false, multT: 0, lk: 0, alleyDone: false, shield: 0, introT: 0, chShown: false, evaluated: false, blurT: 0, rampD: -1, coinsRun: 0, i1: 0, o1: 0, crates: [] }); if (M1P.roofG) M1P.roofG.visible = false; }
 const m1others = (o) => [0, 1, 2].filter((x) => x !== o);
 const m1near = () => { const c = [M1.open - 1, M1.open, M1.open + 1].filter((x) => x >= 0 && x <= 2); return c[(M1.rng() * c.length) | 0]; };
-function m01Row(d) {                                                  // fair rows: a clear lane within one step of the previous one, or a jump/slide-all row
-  if (M1.n % 6 === 5 || (d < M01.length * 0.2 && M1.n % 2 === 1)) return { obs: [], open: M1.open };
-  const ph = d < M01.length * 0.2 ? 0 : d < M01.length * 0.55 ? 1 : 2, r = M1.rng;
-  const pool = ph === 0 ? ['s_low', 's_blk', 'all_low', 'all_over'] : ph === 1 ? ['s_blk', 'wall2', 'all_low', 'all_over', 'lowblk', 's_low'] : ['wall2', 'lowblk', 'mixjs', 'all_over', 'all_low', 'wall2'];
+const m01Sp = (d) => M01.speed * (d >= M01.length * M01.at.ESCALATION ? M01.escSpeed : 1) * 1.45;            // one decision every ≈1.45 s at any speed
+function m01Row(d) {                                                  // every row is a decision (no empty rows); a clear lane stays within one step of the previous one
+  const W = M01.length, ph = d < W * M1_PCT.warm ? 0 : d < W * M1_PCT.chaos ? 1 : 2, r = M1.rng;
+  const pool = ph === 0 ? ['tuk', 'arc', 'tuk', 'arc', 's_blk'] : ph === 1 ? ['s_blk', 'tuk', 'arc', 'wall2', 'lowblk', 'all_over'] : ['wall2', 'lowblk', 'mixjs', 'all_over', 'tuk', 'arc', 's_blk'];       // crates smash harmlessly, so they only appear with a hazard or a coin arc
   let k, g = 0; do k = pool[(r() * pool.length) | 0]; while (k === M1.last && ++g < 6); M1.last = k;
-  let obs = [], open = M1.open;
-  if (k === 's_low' || k === 's_blk') { const L = (r() * 3) | 0; obs = [[k === 's_low' ? 'low' : 'block', L]]; if (L === M1.open) open = m1others(L).sort((a, b) => Math.abs(a - M1.open) - Math.abs(b - M1.open))[0]; }
+  let obs = [], open = M1.open, arc = -1;
+  if (k === 's_low' || k === 's_blk' || k === 'tuk' || k === 'arc') { const L = k === 'arc' ? M1.open : (r() * 3) | 0; obs = [[k === 's_low' || k === 'arc' ? 'low' : k === 'tuk' ? 'tuk' : 'block', L]]; if (k === 'arc') arc = L; if (L === M1.open) open = m1others(L).sort((a, b) => Math.abs(a - M1.open) - Math.abs(b - M1.open))[0]; }
   else if (k === 'wall2') { open = m1near(); obs = m1others(open).map((x) => ['block', x]); }
   else if (k === 'lowblk') { open = m1near(); const [a, b] = m1others(open); obs = [['low', a], ['block', b]]; }
   else if (k === 'all_low') obs = [0, 1, 2].map((x) => ['low', x]);
   else if (k === 'all_over') obs = [0, 1, 2].map((x) => ['over', x]);
   else if (k === 'mixjs') { const a = (r() * 3) | 0; obs = [['low', a], ...m1others(a).map((x) => ['over', x])]; }
-  M1.open = open; return { obs, open };
+  M1.open = open; return { obs, open, arc };
 }
 function m01Events(k) {
-  const rows = []; const add = (obs, sp, x) => rows.push(Object.assign({ obs, open: M1.open, sp }, x));
-  if (k === 'cloth') { add([0, 1, 2].map((l) => ['cloth', l]), 13); add([0, 1, 2].map((l) => ['cloth', l]), 14); }                    // slide under both
-  else if (k === 'trike') { add([['trike', 0]], 15); add([['trike', 2]], 15); }                                                       // crossing tricycles: jump or time a lane switch
-  else if (k === 'soap') { add([['puddle', 1], ['puddle', 2]], 13); add([['puddle', 0], ['puddle', 1]], 13); }                          // slip → combo reset
-  rows[0].ev = k; return rows;
+  const r = M1.rng, rows = [], add = (obs, x) => rows.push(Object.assign({ obs, open: M1.open, arc: -1 }, x));
+  if (k === 'zaffa') { const o = m1near(); M1.open = o; add(m1others(o).map((x) => ['zaffa', x]), { ev: 'zaffa', conf: o, open: o }); }                   // two lanes of procession, one open gap lined with confetti
+  else if (k === 'swerve') { const c = [[0, 1], [1, 1], [1, -1], [2, -1]].filter(([L, sw]) => Math.abs(3 - L - (L + sw) - M1.open) <= 1), [L, sw] = c[(r() * c.length) | 0], o = 3 - L - (L + sw); M1.open = o; add([['tuk', L]], { ev: 'swerve', sw, open: o }); }  // tuk-tuk swerves into the next lane
+  else if (k === 'combo') { add([0, 1, 2].map((l) => ['cloth', l]), { ev: 'combo' }); const c = (r() * 3) | 0; M1.open = c; add(m1others(c).map((x) => ['puddle', x]), { open: c }); }   // slide the washing line, then step round the soap
+  return rows;
 }
 function m01Next(d) {
-  const L = M01.length; if (M1.evQ.length) return M1.evQ.shift();
-  for (const k of ['cloth', 'trike', 'soap']) if (!M1.ev[k] && d >= M1_PCT[k] * L) { M1.ev[k] = 1; if (d <= M1_PCT[k] * L + 30) { M1.evQ = m01Events(k); return M1.evQ.shift(); } }
-  if (!M1.ev.ramp && d >= M1_PCT.ramp * L) { M1.ev.ramp = 1; M1.rampD = d; return { obs: [], open: M1.open, ramp: true }; }
-  if (!M1.ev.gate && d >= M1_PCT.gate * L) { M1.ev.gate = 1; return { obs: [['low', 2]], open: 1, gate: true }; }
+  const W = M01.length; if (M1.evQ.length) return M1.evQ.shift();
+  const sc = M1_SCH[M1.si];
+  if (sc && d >= sc[1] * W) { M1.si++; const k = sc[0];
+    if (k === 'ramp') { M1.rampD = d; M1.open = 0; return { obs: [['low', 1], ['low', 2]], open: 0, arc: -1, ramp: true }; }
+    if (k === 'gate') { M1.open = 1; return { obs: [['low', 2]], open: 1, arc: -1, gate: true }; }
+    if (d <= sc[1] * W + 30) { M1.evQ = m01Events(k); return M1.evQ.shift(); } }
   const row = m01Row(d); M1.n++;
-  if (M1.rampD >= 0 && d > M1.rampD + 4 && d < M1.rampD + 84) { row.obs = row.obs.filter(([, l]) => l !== 0); row.coins = true; }      // rooftop lane (left) is clear and lined with coins
+  if (M1.rampD >= 0 && d > M1.rampD + 4 && d < M1.rampD + 84) { row.obs = row.obs.filter(([, l]) => l !== 0); row.obs.push(['low', 0]); row.arc = 0; row.roof = true; }      // rooftop lane (left): a crate + coin arc every row
   return row;
 }
-const M1_TXT = { cloth: ['غسيل منشور! اتزحلق تحته 👕', 'Washing lines! Slide under 👕'], trike: ['تروسيكل قاطع الشارع! اقفز أو غيّر الحارة', 'A tricycle is crossing! Jump or switch lanes'], soap: ['رغوة صابون! خدلك خطوة جنب', 'Soap suds! Step aside'] };
+const M1_TXT = { zaffa: ['زفّة! دوّر على الفتحة 🎺', 'Wedding zaffa! Find the gap 🎺'], swerve: ['توك توك بيلف! 🛺', 'Tuk-tuk swerving! 🛺'], combo: ['غسيل وبعده صابون! تزحلق وبعدين خطوة جنب', 'Washing line, then soap! Slide, then sidestep'], cloth: ['غسيل منشور! اتزحلق تحته 👕', 'Washing lines! Slide under 👕'], trike: ['تروسيكل قاطع الشارع! اقفز أو غيّر الحارة', 'A tricycle is crossing! Jump or switch lanes'], soap: ['رغوة صابون! خدلك خطوة جنب', 'Soap suds! Step aside'] };
 const m1save = () => { let o = {}; try { o = JSON.parse(localStorage.getItem('arees.m01ch') || '{}'); } catch {} o.done ||= {}; return o; };
 function m01Slip() { state.lane = state.lane === 1 ? (M1.rng() < 0.5 ? 0 : 2) : 1; sayedFlinch = 0.5; SFX.hit && SFX.hit(); FX.shake = Math.max(FX.shake, 0.2); if (M1.combo >= 3) toast(t('comboLost')); else toast(t('soapSlip')); M1.combo = 0; }
 function m01Combo() { M1.combo++; M1.bestCombo = Math.max(M1.bestCombo, M1.combo); state.bonus += Math.min(M1.combo, 10) * 5; if (M1.combo % 5 === 0) toast('🔥 ×' + M1.combo); }
-function m01Hit(g) { const ty = g.userData.type; if (ty === 'cloth') { stage.style.filter = 'blur(6px)'; M1.blurT = 0.4; } else if (ty === 'trike') FX.shake = Math.max(FX.shake, 0.6); M1.combo = 0; }
+function m01Hit(g) { const ty = g.userData.type; if (ty === 'cloth') { stage.style.filter = 'blur(6px)'; M1.blurT = 0.4; } else if (ty === 'trike' || ty === 'tuk' || ty === 'zaffa') FX.shake = Math.max(FX.shake, 0.6); M1.combo = 0; }
 function m01Roof() { M1.roofT = 8; M1.roofCoins = 0; banner(t('roofGo'), 'win'); state.vy = Math.sqrt(2 * RUN.gravity * 2.0); state.grounded = false; SFX.item(); }
 function m01RoofEnd() { if (M1.roofCoins >= 12) { M1.roofDone = true; M1.shield = 1; toast(t('roofDone')); SFX.goal(); npcCelebrate(clock.elapsedTime); } else toast(t('roofMiss')); }
 function m01Alley() { M1.alleyDone = true; M1.multT = 10; M1.hemi0 = hemi.intensity; banner(t('alleyGo'), 'win'); SFX.goal(); }
@@ -3836,6 +3859,9 @@ function m01Tick(dt) {
   const P = player.position;
   for (const g of active) { const u = g.userData, ty = u.type, dz = P.z - g.position.z;
     if (ty === 'trike') { if (dz < 0 && dz > -26) { g.position.x += u.cross * 3.4 * dt; g.rotation.y = u.cross > 0 ? 0 : Math.PI; if (!u.honk && dz > -15) { u.honk = 1; SFX.warn(); FX.shake = Math.max(FX.shake, 0.5); } } }
+    else if (ty === 'tuk') { if (dz > 0 && dz < 32) { if (!u.honk) { u.honk = 1; SFX.warn(); } if (u.hl) u.hl.material.emissiveIntensity = (Math.floor(clock.elapsedTime * 9) & 1) ? 3.2 : 0.4;
+      if (u.sw && dz < 16) { u.swT += dt; const e = Math.min(1, u.swT / 0.7); g.position.x = u.x0 + (laneX(u.lane + u.sw) - u.x0) * e * e * (3 - 2 * e); g.rotation.y = u.sw * 0.4 * Math.sin(Math.PI * e); } } }
+    else if (ty === 'zaffa') { if (u.conf) u.conf.rotation.y += dt * 0.9; }
     else if (ty === 'puddle') { if (!u.hit && state.grounded && Math.abs(P.x - g.position.x) < 1.0 && Math.abs(dz) < 0.9) { u.hit = 1; m01Slip(); } }
     else if (ty === 'ramp') { if (!u.hit && Math.abs(P.x - g.position.x) < 1.1 && Math.abs(dz) < 1.2) { u.hit = 1; m01Roof(); } } }
   if (M1.roofT > 0) { M1.roofT -= dt; if (M1.roofT <= 0) m01RoofEnd(); }
@@ -3903,6 +3929,7 @@ function m01Tint() {
   sayed.traverse((o) => { if (!o.isMesh || !o.material) return; for (const m of (Array.isArray(o.material) ? o.material : [o.material])) { if (!m.color) continue; m.userData.c0 ||= m.color.clone(); m.color.copy(m.userData.c0); if (on) m.color.multiply(tc); } });
 }
 function m01Stage() {
+  M01.length = STAGE.n === 1 ? 735 : 1000;
   if (M1P.built) { M1P.g.visible = false; M1P.roofG.visible = false; }
   const sc = sun.shadow.camera; if (STAGE.n === 1) Object.assign(sc, { left: -7, right: 7, top: 14, bottom: -28, far: 50 }); else Object.assign(sc, { left: -10, right: 10, top: 20, bottom: -40, far: 60 }); sc.updateProjectionMatrix();
   stage.style.filter = '';
@@ -3914,18 +3941,19 @@ function updateTrack() {
   // M12: the street is authored by phase. Intro = every other row only; chase = denser rows; nothing past the boss gate
   // (the boss throws his own obstacles there). Power-ups come from the M01 schedule, alone in the open lane of their gap.
   const bossZ = -M01.length * M01.at.BOSS_ENCOUNTER;
-  while (track.z > player.position.z - 100 && track.z > bossZ + 12) {
+  while (track.z > player.position.z - 100 && track.z > bossZ + (STAGE.n === 1 ? 4 : 12)) {
     const i = track.row % TRACK.rows.length, d = -track.z, intro = d < M01.length * M01.at.RUNNING, chase = d >= M01.length * M01.at.ESCALATION;
     if (STAGE.n === 1) {                                                 // M01 gameplay layer
       const row = m01Next(d);
-      for (const [type, lane] of row.obs) { spawn(type, lane, track.z); const g = active[active.length - 1]; if (type === 'trike') g.userData.cross = lane === 0 ? 1 : -1; if (row.gate && type === 'low') g.userData.alley = true; }
+      for (const [type, lane] of row.obs) { spawn(type, lane, track.z); const g = active[active.length - 1], u = g.userData; if (type === 'trike') u.cross = lane === 0 ? 1 : -1; if (row.gate && type === 'low') u.alley = true; if (type === 'tuk') { u.x0 = g.position.x; u.sw = row.sw || 0; }
+        if (type === 'zaffa' && u.conf) { const dl = row.conf - lane; u.conf.visible = Math.abs(dl) === 1; u.conf.position.x = dl * 1.5; } }
       if (row.ev) M1.alerts.push({ k: row.ev, z: track.z });
       if (row.ramp) { spawn('ramp', 0, track.z - 2); M1.roof = { z0: track.z - 4, z1: track.z - 86 }; if (M1P.roofG) { M1P.roofG.position.z = M1.roof.z0; M1P.roofG.visible = true; } }
-      const next = M01.powerups[track.power];
+      const next = M01.pu1[track.power];
+      if (row.arc >= 0) for (let c = 0; c < 5; c++) { spawn('cane', row.arc, track.z + 2.4 - c * 1.2); const q = pickups[pickups.length - 1]; q.position.y = [0.4, 1.1, 1.9, 1.1, 0.4][c]; if (row.roof) q.userData.secret = 3; }
       if (next && d + 10 >= next[0]) { spawn(next[1], row.open, track.z - 6); track.power++; }
-      else if (row.coins) for (let c = 0; c < 4; c++) { spawn('cane', 0, track.z - 2 - c * 2.8); pickups[pickups.length - 1].userData.secret = 3; }
-      else if (mission.cane < MISSION.cane) for (let c = 0; c < TRACK.canesPerGap; c++) spawn('cane', row.open, track.z - 3 - c * 1.5);
-      track.row++; track.z -= row.sp || (chase ? M01.escSpacing : TRACK.spacing); continue;
+      else if (!(row.arc >= 0) && mission.cane < MISSION.cane) for (let c = 0; c < TRACK.canesPerGap; c++) spawn('cane', row.open, track.z - 3 - c * 1.5);
+      track.row++; track.z -= m01Sp(d); continue;
     }
     if (!intro || track.row % 2 === 0) for (const [type, lane] of TRACK.rows[i]) spawn(type, lane, track.z);
     const gap = TRACK.gaps[i], next = M01.powerups[track.power];
@@ -4016,6 +4044,8 @@ function renderGoals(flash) {
   if (flash === 'cane') restartAnim(caneChip, 'flash');
   renderMissionHud(true);
 }
+const hitBoxO = (g, h) => { if (STAGE.n !== 1) return hitBox(g, h); const p = player.position, half = 0.9 * player.scale.y, o = g.position, k = 0.88;   // M01: obstacle boxes 12 % tighter → near-misses are safe
+  return Math.abs(p.x - o.x) < (0.35 + h.x) * k && Math.abs(p.z - o.z) < (0.3 + h.z) * k && p.y - half < h.y1 * k + o.y && p.y + half > h.y0 + o.y; };
 const hitBox = (g, h) => { const p = player.position, half = 0.9 * player.scale.y, o = g.position;
   return Math.abs(p.x - o.x) < 0.35 + h.x && Math.abs(p.z - o.z) < 0.3 + h.z && p.y - half < h.y1 + o.y && p.y + half > h.y0 + o.y; };
 function collectPickups() {
@@ -4077,7 +4107,7 @@ function checkCollisions(dt) {
     player.visible = state.invuln <= 0 || Math.floor(state.invuln * 10) % 2 === 0; // blink
     return;
   }
-  for (const g of active) if ((!CRATES.breaks || g.userData.type !== 'low') && hitBox(g, OBSTACLE[g.userData.type].hit)) { if (STAGE.n === 1) m01Hit(g); takeHit(); return; }
+  for (const g of active) if ((!CRATES.breaks || g.userData.type !== 'low') && hitBoxO(g, OBSTACLE[g.userData.type].hit)) { if (STAGE.n === 1) m01Hit(g); takeHit(); return; }
 }
 
 // M10.3: an obstacle in Sayed's lane that passes behind him without a hit = jumped over / slid under → small reward cue.
@@ -4193,7 +4223,7 @@ function runSpeed() {
   if (GM.on && GM.speed !== undefined) return GM.speed;
   if (MS.state === 'VICTORY') return MS.vSpeed;
   const chase = MS.state === 'ESCALATION' || MS.state === 'BOSS_ENCOUNTER';
-  return RUN.speed * (chase ? M01.escSpeed : 1) * (PWR.tray > 0 ? POWER.tray.speed : 1);
+  return (STAGE.n === 1 ? M01.speed : RUN.speed) * (chase ? M01.escSpeed : 1) * (PWR.tray > 0 ? POWER.tray.speed : 1);
 }
 function progress() {
   if (GM.on) return GM.prog;
@@ -4373,14 +4403,14 @@ function updateBoss(dt) {
     u.rel += (BOSS_CFG.ahead - u.rel) * (1 - Math.exp(-dt * 3));
     u.vy -= 22 * dt; u.y = Math.max(0, u.y + u.vy * dt);
     if (u.t > 0.55 && u.y === 0 && !u.landed) { u.landed = true; FX.shake = 0.3; SFX.hit(); bossSay('bogaEnter', 3); }
-    if (u.t > 2.6) nextVolley();
+    if (u.t > (STAGE.n === 1 ? 0.9 : 2.6)) nextVolley();
   } else if (u.mode === 'telegraph') {
-    if (u.t >= (STAGE.n === 1 ? 0.8 : BOSS_CFG.telegraph)) { throwPattern(); u.mode = 'gap'; u.t = 0; }
+    if (u.t >= (STAGE.n === 1 ? 0.7 : BOSS_CFG.telegraph)) { throwPattern(); u.mode = 'gap'; u.t = 0; }
   } else if (u.mode === 'gap') {
-    if (u.t >= BOSS_CFG.gap) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1) startCharge(); else startTrip(); }
+    if (u.t >= (STAGE.n === 1 ? 0.8 : BOSS_CFG.gap)) { if (++u.attack < u.volley.length) { u.mode = 'telegraph'; u.t = 0; showTelegraph(); } else if (STAGE.n === 1) startCharge(); else startTrip(); }
   } else if (u.mode === 'slamTele') {
     u.y += (2.6 - u.y) * (1 - Math.exp(-dt * 7)); u.rel += (6.5 - u.rel) * (1 - Math.exp(-dt * 3)); tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xffd23a);
-    if (u.t >= 0.8) { u.mode = 'slam'; u.t = 0; u.vy = -30; }
+    if (u.t >= 0.7) { u.mode = 'slam'; u.t = 0; u.vy = -30; }
   } else if (u.mode === 'slam') {
     u.vy -= 30 * dt; u.y = Math.max(0, u.y + u.vy * dt);
     if (u.y === 0) { clearTelegraph(); FX.shake = 0.5; SFX.hit(); u.mode = 'slamWave'; u.t = 0; slamRing.visible = true; }
@@ -4389,7 +4419,7 @@ function updateBoss(dt) {
     if (u.t >= 0.65) { slamRing.visible = false; if (player.position.y < PLAYER_Y + 0.3 && state.invuln <= 0 && PWR.mahshi <= 0) takeHit(); startTrip(); }
   } else if (u.mode === 'chargeTele') {                                  // M01: Bo'ga paws the ground, a red lane lights up — step out of it or jump
     tele[u.lane].visible = true; tele[u.lane].material.color.setHex(0xe8343a); FX.shake = Math.max(FX.shake, 0.04);
-    if (u.t >= 0.8) { u.mode = 'charge'; u.t = 0; SFX.throw(); }
+    if (u.t >= 0.7) { u.mode = 'charge'; u.t = 0; SFX.throw(); }
   } else if (u.mode === 'charge') {
     u.rel -= 26 * dt; FX.shake = Math.max(FX.shake, 0.07); tele[u.lane].visible = true;
     if (u.rel <= 2.6) { u.rel = 2.6; clearTelegraph(); const lane = u.lane;
@@ -4541,7 +4571,7 @@ function stepGame(dt) {
 // Test hook: jump straight to a distance (track, street and NPCs are rebuilt around the new position).
 function warp(d) {
   clearTrack(); player.position.z = -d; track.z = player.position.z - 25; track.row = Math.ceil(d / TRACK.spacing);
-  track.power = M01.powerups.findIndex(([m]) => m > d + 25); if (track.power < 0) track.power = M01.powerups.length;
+  { const pl = STAGE.n === 1 ? M01.pu1 : M01.powerups; track.power = pl.findIndex(([m]) => m > d + 25); if (track.power < 0) track.power = pl.length; }
   envSections.forEach((sec, i) => (sec.position.z = player.position.z + 20 - i * ENV.len));
   for (const c of npcs) { const u = c.userData; if (u.cycle) while (c.position.z > player.position.z + 10) c.position.z -= u.cycle; else u.gone = true; }
   updateTrack(); updateCamera(0, true);
@@ -4647,7 +4677,7 @@ function show(mode) {
 }
 const go = (mode) => { if (ui.mode !== mode) nav.push(ui.mode); show(mode); };
 const back = () => show(nav.pop() || 'menu');
-function startMission() { STAGE.n = SEL.level; m01Stage(); s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) M1.introT = /[?&]intro6=0\b/.test(location.search) ? 0 : 6; m01Tint(); if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
+function startMission() { STAGE.n = SEL.level; m01Stage(); s02Apply(STAGE.n); if (STAGE.n === 1 && PFX.level && !PFX.lib) fxLoad(); applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : STAGE.n === 1 ? 1 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); stopVoice(); preloadVoices(SEL.char); for (const c in VOICE_CLIPS) if (c !== SEL.char) preloadVoices(c); restart(); SONGS.game.pos = 0; nav.length = 0; ui.runActive = true; clock.getDelta(); show('playing'); showHint(); if (STAGE.n !== 12 && !(STAGE.n === 1 && M1S.opened)) heroSay('start', 0.6); M1S.opened = false; if (STAGE.n === 1) M1.introT = /[?&]intro6=0\b/.test(location.search) ? 0 : 6; m01Tint(); if (STAGE.n === 1) { M1S.said = {}; npcs.forEach((c) => { c.userData.line = c.userData.id === 'noga' ? 1 : 0; }); } }
 function goMenu() { stopVoice(); STAGE.n = 1; BOSS_CFG.hp = 3; setBossModel(false); setObstacleSkin('market'); restart(); nav.length = 0; ui.runActive = false; show('menu'); }
 function pauseGame() { if (ui.mode === 'playing' && !state.over) { stopVoice(); show('pause'); } }
 function resumeGame() { if (ui.mode === 'pause') { clock.getDelta(); show('playing'); } } // drop paused time
@@ -8276,7 +8306,7 @@ async function beginMissionFlow() {
     let n = 0; jobs.forEach((j) => j.then(() => fBar('lvlBar', 0.08 + 0.52 * (++n / jobs.length))));
     await Promise.race([Promise.all(jobs), fWait(6000)]);
     fBar('lvlBar', 0.65, t('ldStage')); await fFrames(1);                                         // 2 · build the stage under the loader
-    STAGE.n = SEL.level; applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); await fFrames(1);
+    STAGE.n = SEL.level; applyStageTheme(STAGE.n); setEnvStyle(STAGE.n); BOSS_CFG.hp = STAGE.n === 10 ? 4 : STAGE.n === 1 ? 1 : 3; setBossModel(STAGE.n === 10); setObstacleSkin(STAGE.n === 10 ? 'desert' : 'market'); await fFrames(1);
     fBar('lvlBar', 0.9, t('ldWarm')); try { renderer.compile(scene, camera); } catch {} await fFrames(2);   // 3 · upload to the GPU before the first gameplay frame
     await fWait(Math.max(0, 900 - (performance.now() - t0))); fBar('lvlBar', 1, t('ldReady')); await fWait(200);
     fStep('intro');
@@ -8295,7 +8325,7 @@ async function beginMissionFlow() {
 }
 bootFlow();
 
-window.__fx = PFX; window.__arees = { M1, M1_CH, M1P, M1_PCT, startSlam, m01Next, m01Reset, m01Eval, m01Tint, m01Roof, m01Alley, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
+window.__fx = PFX; window.__arees = { M1, M1_CH, M1P, M1_PCT, M1_SCH, OBSTACLE, hitBoxO, hitBox, m01Sp, m01Row, startSlam, m01Next, m01Reset, m01Eval, m01Tint, m01Roof, m01Alley, track, takeHit, heroModels, S02, loadS02, s02Apply, CINE, cineStart, cineFinish, CINE_SCENES, winStory, missionCard, STORY, WM_LOC, wmState, wmCur, show, view, WM, wmRender, wmFocus, saveSel, levelByN, ctlInput, ctlLast, PWR, showSpeaker, J, CTL, SEL, startMission, goMenu, input, FLOW, beginMissionFlow, openCharSelect, INTRO, startIntro, finishIntro, GM, gmReset, stepGM, stepGame, updateCamera, active, VEH, E30, setEnvStyle, envSections, TESTING, STAGE, STAGE_CAST, castReport, CMAP, cmapFocus, applyStageTheme, heroDrag, angOn, setRadioOpen, setRadioSrc, ANG, playNow, TEXKIT, SM, OBSTACLE, ENV, showResults, setMissionState, boss, MS, GLB, loadSayedGLB, glbBuild, PERF, IS_MOBILE, RADIO, RADIO_FILES, radioTracks, audioLevel: () => { const A = AUDIO; if (!A.analyser) return 0; const d = new Float32Array(A.analyser.fftSize); A.analyser.getFloatTimeDomainData(d); let q = 0; for (const v of d) q += v * v; return Math.sqrt(q / d.length); }, scene, camera, player, renderer, state, input, active, pickups, collecting, bursts, spawn, mission, MISSION, restart, TRACK, ui, score, get sayed() { return sayed; }, heroModels, rideModels, SEL, view, LEVELS, CHARS, RIDES, go, show, nav, THUMB, heroBubble, VOICE_FILES, SONGS, npcs, sayedMode, npcMode, npcCelebrate, clock, get flinch() { return sayedFlinch; }, envSections, AUDIO, SETTINGS, SFX, MS, setMissionState, progress, PWR, POWER, activatePower, boss, BOSS_CFG, M01, DEBUG, warp, bossModel, hankash, runSpeed, tele, VOICE, VOICE_CLIPS, playVoice, stopVoice, unlockAudio, ITEMS, CRATES, TTS, breakCrate, rollCrate, debris, startMission, endRun, audioSelfCheck, CBT, throwTool, raiseGuard, SPEECH, speak, stopAllSpeech, applyAudioNow: () => applyAudio() };
 </script>
 </body>
 </html>
