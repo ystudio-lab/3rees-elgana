@@ -4790,7 +4790,9 @@ async function loadS02() {
 function s02Apply() { if (SEL.char === 'sayed' && S02.model && sayed !== S02.model && heroModels.sayed === S02.model) { const yaw = sayed.rotation.y; player.remove(sayed); sayed = S02.model; sayed.position.set(0, -PLAYER_Y, 0); sayed.rotation.set(0, yaw, 0); player.add(sayed); } }   // safety net at mission start
 if (S02.on) setTimeout(loadS02, 0);
 
+const SAYED_PORTRAIT = 'assets/characters/sayed/sayed_portrait.webp';       // official Saeed_felfal_02 render (cut-out) — used for every Sayed 2D picture: cards, HUD avatar, dialogue portraits
 function charThumb(id) {
+  if (id === 'sayed' && S02.on) return SAYED_PORTRAIT;
   return (THUMB['c_' + id] ||= (() => { const m = heroModel(id); window.AreesCast.animate(m, 'idle', 0, 0);
     return objectThumb(m, 120, 150, { dist: 2.15, fov: 26, x: 0.35, up: 0.1, yaw: -0.25, centerY: b => b.max.y - 0.42 }); })());
 }
