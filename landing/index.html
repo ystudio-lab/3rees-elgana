@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عريس الجنة — لعبة الجري المصرية</title>
+<meta name="description" content="عريس الجنة: لعبة جري كوميدية في شوارع القاهرة. ساعد سيد يلحق فرحه قبل ما بؤجة وحنكش باشا يبوّظوه.">
+<style>
+:root{--gold:#e8a33d;--gold-d:#b9761c;--gold-l:#ffe7a3;--brown:#1a1410;--brown-2:#2a1d14;--sand:#f2c48d;--red:#b03a2e;--cream:#fff4dc}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;background:var(--brown);color:var(--cream);line-height:1.7;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+/* hero */
+.hero{position:relative;padding:28px 0 64px;background:radial-gradient(120% 80% at 50% 0%,#6b3a1a 0%,#2a1d14 45%,#1a1410 100%);overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,231,163,.035) 0 2px,transparent 2px 22px);pointer-events:none}
+nav{display:flex;align-items:center;justify-content:space-between;position:relative;margin-bottom:36px}
+nav b{font-size:15px;letter-spacing:.04em;color:var(--gold-l)}
+nav a.mini{padding:8px 18px;border-radius:999px;border:1px solid rgba(242,193,110,.5);font-weight:700;font-size:14px;background:rgba(255,231,163,.06)}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;position:relative}
+.logo{width:min(420px,100%);display:block;filter:drop-shadow(0 8px 24px rgba(0,0,0,.55))}
+.hero h1{font-size:clamp(26px,4.4vw,44px);line-height:1.35;margin:18px 0 10px;background:linear-gradient(180deg,#fff6d6 8%,#f2b84b 55%,#c47a1c 95%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+.hero p.lead{font-size:clamp(16px,2vw,19px);color:#f3deb8;max-width:520px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:16px;font-weight:900;font-size:18px;cursor:pointer;border:0;transition:transform .08s,box-shadow .08s;font-family:inherit}
+.btn.play{background:var(--gold);color:var(--brown);box-shadow:0 5px 0 var(--gold-d),0 12px 28px rgba(232,163,61,.35)}
+.btn.play:hover{transform:translateY(-2px)}
+.btn.play:active{transform:translateY(4px);box-shadow:0 1px 0 var(--gold-d)}
+.stores{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.store{display:flex;align-items:center;gap:12px;padding:9px 18px 9px 16px;border-radius:14px;background:#0d0906;border:1px solid rgba(255,255,255,.22);min-width:176px;cursor:pointer;font-family:inherit;color:#fff;text-align:start;position:relative;transition:border-color .15s,transform .1s}
+.store:hover{border-color:var(--gold);transform:translateY(-2px)}
+.store svg{width:28px;height:28px;flex:none}
+.store small{display:block;font-size:11px;opacity:.75;line-height:1.2}
+.store strong{display:block;font-size:17px;line-height:1.25}
+.store em{position:absolute;top:-9px;inset-inline-start:12px;font-style:normal;font-size:11px;font-weight:800;background:var(--red);color:#fff;padding:1px 9px;border-radius:999px}
+.phone{justify-self:center;width:min(270px,64vw);aspect-ratio:9/18.5;border-radius:36px;border:8px solid #0d0906;background:#000;box-shadow:0 0 0 2px rgba(242,193,110,.45),0 30px 60px rgba(0,0,0,.6);overflow:hidden;transform:rotate(-3deg)}
+.phone img{width:100%;height:100%;object-fit:cover;display:block}
+/* sections */
+section{padding:64px 0}
+h2{font-size:clamp(24px,3.4vw,34px);font-weight:900;color:var(--gold-l);text-align:center;margin-bottom:8px}
+.sub{text-align:center;color:#d9bf92;margin-bottom:36px}
+.orn{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 14px}
+.orn i{width:54px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.orn b{width:9px;height:9px;transform:rotate(45deg);background:var(--gold)}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{padding:22px;border-radius:20px;background:linear-gradient(180deg,rgba(255,240,214,.09),rgba(255,240,214,.03));border:1px solid rgba(242,193,110,.28)}
+.card .ic{font-size:30px;margin-bottom:8px}
+.card h3{font-size:19px;color:var(--gold-l);margin-bottom:4px}
+.card p{font-size:15px;color:#e8d4ae}
+.shots{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.shot{width:min(240px,42vw);border-radius:24px;overflow:hidden;border:6px solid #0d0906;box-shadow:0 0 0 2px rgba(242,193,110,.35),0 18px 40px rgba(0,0,0,.5)}
+.shot img{display:block;width:100%}
+.shot span{display:block;padding:8px 10px;background:#0d0906;font-size:13px;text-align:center;color:var(--gold-l);font-weight:700}
+.story{display:grid;grid-template-columns:.8fr 1.2fr;gap:30px;align-items:center}
+.story img{width:min(300px,100%);justify-self:center;border-radius:28px;border:4px solid var(--gold);box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.story blockquote{margin-top:14px;padding:12px 16px;border-inline-start:4px solid var(--gold);background:rgba(255,240,214,.06);border-radius:10px;font-weight:700;color:var(--gold-l)}
+.cast{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.cast span{padding:6px 14px;border-radius:999px;background:rgba(232,163,61,.16);border:1px solid rgba(242,193,110,.4);font-size:14px;font-weight:700}
+.final{text-align:center;background:radial-gradient(100% 120% at 50% 100%,#6b3a1a,#1a1410 70%)}
+.final .cta,.final .stores{justify-content:center}
+footer{padding:24px 0 40px;text-align:center;color:#a8916a;font-size:13px;border-top:1px solid rgba(242,193,110,.15)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,30px);opacity:0;background:var(--gold);color:var(--brown);padding:11px 22px;border-radius:999px;font-weight:800;transition:.25s;pointer-events:none;z-index:9}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:780px){.hero-grid,.story{grid-template-columns:1fr}.hero-grid>div:first-child{text-align:center}.logo{margin:0 auto}.hero p.lead{margin:0 auto}.cta,.stores{justify-content:center}.phone{transform:none}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <nav><b>YOUSRY STUDIO</b><a class="mini" href="#stores">تحميل</a></nav>
+    <div class="hero-grid">
+      <div>
+        <img class="logo" src="logo.webp" alt="عريس الجنة">
+        <h1>الفرح بعد ساعة... والمصايب لسه بتجري ورا سيد!</h1>
+        <p class="lead">لعبة جري كوميدية في شوارع القاهرة. اجري، اقفز، اتزحلق، ولمّ طلبات الفرح قبل ما بؤجة وحنكش باشا يبوّظوا اليوم.</p>
+        <div class="cta">
+          <a class="btn play" id="play" href="https://arees-el-gannah.vercel.app/">▶ جرّب اللعبة دلوقتي</a>
+        </div>
+        <div class="stores" id="stores">
+          <button class="store" data-store="ios" type="button"><em>قريبًا</em>
+            <svg viewBox="0 0 24 24" fill="#fff"><path d="M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.9.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.7-4.1zM14.1 5.6c.6-.8 1.1-1.9.9-3-1 0-2.1.7-2.8 1.5-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.6 2.9-1.4z"/></svg>
+            <span><small>حمّلها من</small><strong>App Store</strong></span></button>
+          <button class="store" data-store="android" type="button"><em>قريبًا</em>
+            <svg viewBox="0 0 24 24"><path fill="#34a853" d="M3.6 2.2c-.2.2-.4.6-.4 1v17.6c0 .4.1.8.4 1l9.8-9.8z"/><path fill="#fbbc04" d="m16.7 15.5-3.3-3.5 3.3-3.4 4 2.3c1.1.6 1.1 1.700 0 2.300z"/><path fill="#ea4335" d="m13.4 12 3.3 3.500-11.600 6.600c-.4.200-.9.200-1.500-.1z"/><path fill="#4285f4" d="M16.7 8.500 13.400 12 3.600 2.200c.6-.3 1.100-.3 1.500-.1z"/></svg>
+            <span><small>احصل عليها من</small><strong>Google Play</strong></span></button>
+        </div>
+      </div>
+      <div class="phone"><img src="shot1.webp" alt="لقطة من اللعبة"></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="orn"><i></i><b></b><i></i></div>
+    <h2>إيه اللي هتعمله في اللعبة؟</h2>
+    <p class="sub">مصايب، أكل، ضحك، وزفة في كل مرحلة.</p>
+    <div class="feat">
+      <div class="card"><div class="ic">🏃</div><h3>جري في 3 حارات</h3><p>اتحرك يمين وشمال، اقفز على الصناديق واتزحلق تحت الحواجز. تحكم بسيط بإيد واحدة على الموبايل.</p></div>
+      <div class="card"><div class="ic">🥁</div><h3>أحداث في الشارع</h3><p>زفّة معدّية، توك توك مجنون، ورجالة حنكش. اعدّي من غير خبطة وخد مكافأة.</p></div>
+      <div class="card"><div class="ic">🤫</div><h3>حارات سرية</h3><p>طرق جانبية فيها قصب دهبي وكنوز. مش هتلاقيها إلا لو بصّيت كويس.</p></div>
+      <div class="card"><div class="ic">👊</div><h3>مواجهة بؤجة</h3><p>رشقات، هجمة جري، ودكّة على الأرض. اتفادى كل هجمة وادوس عليه لما يتزحلق.</p></div>
+      <div class="card"><div class="ic">🏆</div><h3>تحديات للإعادة</h3><p>من غير ولا خدش، اكتشف الحارتين السريتين، وجري نضيف من غير دعم. كل تحدي بمكافأة.</p></div>
+      <div class="card"><div class="ic">🎭</div><h3>حكاية بحوار مصري</h3><p>مشاهد افتتاح ونهاية، وشخصيات بتتكلم وتتخانق وتضحّك طول الطريق.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:rgba(0,0,0,.22)">
+  <div class="wrap">
+    <h2>من جوه اللعبة</h2>
+    <p class="sub">لقطات حقيقية من المرحلة الأولى.</p>
+    <div class="shots">
+      <figure class="shot"><img src="shot1.webp" alt="شارع العتبة" loading="lazy"><span>شارع العتبة</span></figure>
+      <figure class="shot"><img src="shot2.webp" alt="مواجهة بؤجة" loading="lazy"><span>مواجهة بؤجة</span></figure>
+      <figure class="shot"><img src="shot3.webp" alt="الحارة السرية" loading="lazy"><span>الحارة السرية</span></figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap story">
+    <img src="sayed.webp" alt="سيد فلفل" loading="lazy">
+    <div>
+      <h2 style="text-align:start">سيد فلفل... عريس بنص حظ</h2>
+      <p style="color:#e8d4ae">فرح سيد ونوجة على الأبواب وطلبات الفرح لسه ناقصة. كل ما يعمل خير يلاقي نفسه في مصيبة. وبؤجة، دراع حنكش باشا، مش ناوي يسيبه يكمّل.</p>
+      <blockquote>«الفرح ده هيتم، حتى لو اتجوزت في الإسعاف!»</blockquote>
+      <div class="cast"><span>سيد</span><span>نوجة</span><span>شوقي</span><span>كبشة</span><span>عسلية</span><span>فهيم</span><span>بؤجة</span><span>حنكش باشا</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>جاهز تلحق الفرح؟</h2>
+    <p class="sub">جرّبها من المتصفح من غير تحميل، أو حمّلها على موبايلك.</p>
+    <div class="cta"><a class="btn play" href="https://arees-el-gannah.vercel.app/">▶ جرّب اللعبة</a></div>
+    <div class="stores">
+      <button class="store" data-store="ios" type="button"><em>قريبًا</em>
+        <svg viewBox="0 0 24 24" fill="#fff"><path d="M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.6.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.9.8 3.1.7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.7-4.1zM14.1 5.6c.6-.8 1.1-1.9.9-3-1 0-2.1.7-2.8 1.5-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.6 2.9-1.4z"/></svg>
+        <span><small>حمّلها من</small><strong>App Store</strong></span></button>
+      <button class="store" data-store="android" type="button"><em>قريبًا</em>
+        <svg viewBox="0 0 24 24"><path fill="#34a853" d="M3.6 2.2c-.2.2-.4.6-.4 1v17.6c0 .4.1.8.4 1l9.8-9.8z"/><path fill="#fbbc04" d="m16.7 15.5-3.3-3.5 3.3-3.4 4 2.3c1.1.6 1.1 1.700 0 2.300z"/><path fill="#ea4335" d="m13.4 12 3.3 3.500-11.600 6.600c-.4.200-.9.200-1.500-.1z"/><path fill="#4285f4" d="M16.7 8.500 13.400 12 3.600 2.200c.6-.3 1.100-.3 1.500-.1z"/></svg>
+        <span><small>احصل عليها من</small><strong>Google Play</strong></span></button>
+    </div>
+  </div>
+</section>
+<footer>© Yousry Studio · عريس الجنة</footer>
+<div id="toast"></div>
+<script>
+// Put the real store links here once the app is published; until then the buttons show "coming soon".
+var STORE_LINKS = { ios: '', android: '' };
+var toast = document.getElementById('toast'), tm;
+document.querySelectorAll('.store').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var u = STORE_LINKS[b.dataset.store];
+    if (u) { window.open(u, '_blank', 'noopener'); return; }
+    toast.textContent = 'النسخة دي هتنزل على الاستور قريبًا — جرّب اللعبة من المتصفح دلوقتي';
+    toast.classList.add('on'); clearTimeout(tm); tm = setTimeout(function () { toast.classList.remove('on'); }, 3200);
+  });
+});
+</script>
+</body>
+</html>
