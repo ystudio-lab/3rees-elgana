@@ -1,0 +1,134 @@
+{
+ "load": {
+  "state": "off",
+  "errs": [],
+  "isGLB": false,
+  "tris": null
+ },
+ "perf_menu": {
+  "callsMax": 105,
+  "callsAvg": 102,
+  "trisAvg": 199445,
+  "msPerFrame": 572.8,
+  "textureMB_gpu": 0,
+  "geomMB": 0.63,
+  "glTextures": 5,
+  "glGeoms": 80
+ },
+ "perf_lobby": {
+  "callsMax": 105,
+  "callsAvg": 105,
+  "trisAvg": 203651,
+  "msPerFrame": 600.6,
+  "textureMB_gpu": 0,
+  "geomMB": 0.63,
+  "glTextures": 5,
+  "glGeoms": 135
+ },
+ "start": {
+  "state": "lane,vy,grounded,slideLeft",
+  "py": 0.9,
+  "sy": 1
+ },
+ "perf_run": {
+  "callsMax": 133,
+  "callsAvg": 111.4,
+  "trisAvg": 223061,
+  "msPerFrame": 410.2,
+  "textureMB_gpu": 0,
+  "geomMB": 0.63,
+  "glTextures": 6,
+  "glGeoms": 146
+ },
+ "seq": {
+  "running": {
+   "clip": "procedural",
+   "py": 0.9,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "run",
+   "flinch": 0
+  },
+  "jumpUp": {
+   "clip": "procedural",
+   "py": 1.49,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "afterJump": {
+   "clip": "procedural",
+   "py": 2.34,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "slide": {
+   "clip": "procedural",
+   "py": 2.34,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "afterSlide": {
+   "clip": "procedural",
+   "py": 0.45,
+   "px": 0,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "left": {
+   "clip": "procedural",
+   "py": 0.45,
+   "px": -1.21,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "right": {
+   "clip": "procedural",
+   "py": 0.45,
+   "px": 1.51,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "afterHit": {
+   "clip": "procedural",
+   "py": 0.45,
+   "px": 2.2,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  }
+ },
+ "hit": {
+  "type": "over",
+  "hitsBefore": 0,
+  "hitsAfter": 0,
+  "states": [
+   "-:slide:proc"
+  ]
+ },
+ "errs": []
+}

@@ -1,0 +1,134 @@
+{
+ "load": {
+  "state": "loaded",
+  "errs": [],
+  "isGLB": true,
+  "tris": 11646
+ },
+ "perf_menu": {
+  "callsMax": 97,
+  "callsAvg": 94.1,
+  "trisAvg": 195603,
+  "msPerFrame": 584.5,
+  "textureMB_gpu": 32.1,
+  "geomMB": 3.35,
+  "glTextures": 15,
+  "glGeoms": 83
+ },
+ "perf_lobby": {
+  "callsMax": 97,
+  "callsAvg": 97,
+  "trisAvg": 199718,
+  "msPerFrame": 643.7,
+  "textureMB_gpu": 32.1,
+  "geomMB": 3.35,
+  "glTextures": 15,
+  "glGeoms": 138
+ },
+ "start": {
+  "state": "lane,vy,grounded,slideLeft",
+  "py": 0.9,
+  "sy": 1
+ },
+ "perf_run": {
+  "callsMax": 125,
+  "callsAvg": 103.4,
+  "trisAvg": 219128,
+  "msPerFrame": 402.8,
+  "textureMB_gpu": 32.1,
+  "geomMB": 3.35,
+  "glTextures": 16,
+  "glGeoms": 149
+ },
+ "seq": {
+  "running": {
+   "clip": "Run",
+   "py": 0.9,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "run",
+   "flinch": 0
+  },
+  "jumpUp": {
+   "clip": "Jump",
+   "py": 1.52,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "afterJump": {
+   "clip": "Jump",
+   "py": 2.35,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "slide": {
+   "clip": "Jump",
+   "py": 2.35,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "jump",
+   "flinch": 0
+  },
+  "afterSlide": {
+   "clip": "Slide",
+   "py": 0.9,
+   "px": 0,
+   "psy": 1,
+   "ssy": 1,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "left": {
+   "clip": "Slide",
+   "py": 0.45,
+   "px": -1.76,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "right": {
+   "clip": "Slide",
+   "py": 0.45,
+   "px": 0.42,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  },
+  "afterHit": {
+   "clip": "Slide",
+   "py": 0.45,
+   "px": 2.19,
+   "psy": 0.5,
+   "ssy": 2,
+   "sposy": -0.9,
+   "mode": "slide",
+   "flinch": 0
+  }
+ },
+ "hit": {
+  "type": "over",
+  "hitsBefore": 0,
+  "hitsAfter": 0,
+  "states": [
+   "-:slide:Slide"
+  ]
+ },
+ "errs": []
+}

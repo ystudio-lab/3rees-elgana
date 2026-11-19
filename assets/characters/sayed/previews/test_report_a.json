@@ -1,0 +1,244 @@
+{
+ "load": {
+  "state": "loaded",
+  "errs": [],
+  "info": {
+   "height": 1.912,
+   "triangles": 11646,
+   "meshes": 3,
+   "materials": 3,
+   "clips": [
+    "idle",
+    "run",
+    "jump",
+    "slide",
+    "wave",
+    "cheer",
+    "talk",
+    "defeat"
+   ],
+   "morphs": 22,
+   "warnings": []
+  },
+  "isGLB": true
+ },
+ "skeleton": {
+  "requiredPresent": true,
+  "allBones": [
+   "root",
+   "hips",
+   "legL",
+   "shinL",
+   "footL",
+   "legR",
+   "shinR",
+   "footR",
+   "torso",
+   "armL",
+   "foreL",
+   "handL",
+   "armR",
+   "foreR",
+   "handR",
+   "head",
+   "head_top"
+  ],
+  "boneCount": 17,
+  "world": {
+   "hips": [
+    0,
+    0.86,
+    0
+   ],
+   "torso": [
+    0,
+    0.9,
+    0
+   ],
+   "head": [
+    -0.019,
+    1.57,
+    0
+   ],
+   "armL": [
+    0.268,
+    1.328,
+    0
+   ],
+   "armR": [
+    -0.292,
+    1.312,
+    0
+   ],
+   "foreL": [
+    0.355,
+    1.048,
+    -0.014
+   ],
+   "foreR": [
+    -0.348,
+    1.6,
+    0
+   ],
+   "legL": [
+    0.118,
+    0.86,
+    0
+   ],
+   "legR": [
+    -0.118,
+    0.86,
+    0
+   ],
+   "shinL": [
+    0.118,
+    0.48,
+    0.01
+   ],
+   "shinR": [
+    -0.118,
+    0.48,
+    0.01
+   ]
+  },
+  "head_top": {
+   "present": true,
+   "parent": "head",
+   "worldY": 1.906,
+   "headTopLocal": 0.338
+  },
+  "sceneRoot": "Scene"
+ },
+ "morphs": {
+  "count": 22,
+  "missing": [],
+  "maxDeltaMetres": {
+   "mouthOpen": 0.0383,
+   "mouthSmile": 0.0217,
+   "mouthFrown": 0.0137,
+   "viseme_aa": 0.0426,
+   "viseme_oo": 0.0411,
+   "viseme_ee": 0.0169,
+   "viseme_mbp": 0.0545,
+   "viseme_fv": 0.0235,
+   "blinkL": 0.0688,
+   "blinkR": 0.0688,
+   "eyesWide": 0.013,
+   "eyesNarrow": 0.0348,
+   "lookUp": 0.0123,
+   "lookDown": 0.0123,
+   "browUp": 0.014,
+   "browAngry": 0.0157,
+   "exp_happy": 0.0167,
+   "exp_angry": 0.0204,
+   "exp_scared": 0.0278,
+   "exp_surprised": 0.0364,
+   "exp_smug": 0.0241,
+   "exp_fall": 0.0429
+  }
+ },
+ "clips": {
+  "idle": {
+   "mapsTo": "Idle",
+   "ok": true,
+   "dur": 2,
+   "tracks": 34,
+   "headY": 1.573,
+   "hipsY": 0.863,
+   "loop": "repeat"
+  },
+  "run": {
+   "mapsTo": "Run",
+   "ok": true,
+   "dur": 0.6,
+   "tracks": 34,
+   "headY": 1.586,
+   "hipsY": 0.884,
+   "loop": "repeat"
+  },
+  "jump": {
+   "mapsTo": "Jump",
+   "ok": true,
+   "dur": 0.7,
+   "tracks": 34,
+   "headY": 1.599,
+   "hipsY": 0.89,
+   "loop": "once"
+  },
+  "slide": {
+   "mapsTo": "Slide",
+   "ok": true,
+   "dur": 0.33,
+   "tracks": 34,
+   "headY": 0.836,
+   "hipsY": 0.432,
+   "loop": "once"
+  },
+  "wave": {
+   "mapsTo": "Wave",
+   "ok": true,
+   "dur": 1.6,
+   "tracks": 34,
+   "headY": 1.57,
+   "hipsY": 0.86,
+   "loop": "repeat"
+  },
+  "cheer": {
+   "mapsTo": "Cheer",
+   "ok": true,
+   "dur": 1.2,
+   "tracks": 34,
+   "headY": 1.631,
+   "hipsY": 0.921,
+   "loop": "repeat"
+  },
+  "talk": {
+   "mapsTo": "Talk",
+   "ok": true,
+   "dur": 2,
+   "tracks": 34,
+   "headY": 1.57,
+   "hipsY": 0.86,
+   "loop": "repeat"
+  },
+  "defeat": {
+   "mapsTo": "Defeat",
+   "ok": true,
+   "dur": 1,
+   "tracks": 34,
+   "headY": 1.443,
+   "hipsY": 0.8,
+   "loop": "once"
+  }
+ },
+ "dialogue": {
+  "started": true,
+  "playingSeen": true,
+  "n": 65,
+  "maxOpen": 0.447,
+  "maxAa": 0,
+  "maxOo": 0.655,
+  "maxEe": 0.277,
+  "maxMbp": 0.517,
+  "distinctOpenLevels": 5,
+  "trace": [
+   0,
+   0.208,
+   0.208,
+   0.208,
+   0.208,
+   0.208,
+   0.208,
+   0.208,
+   0.208,
+   0.04,
+   0.04,
+   0.04,
+   0.04,
+   0.447,
+   0.447,
+   0.447,
+   0.447
+  ]
+ }
+}

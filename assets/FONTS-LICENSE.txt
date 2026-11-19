@@ -1,0 +1,9 @@
+Fonts used by AREES EL GANNAH (عريس الجنة)
+==========================================
+
+Arabic UI font: Noto Sans Arabic (embedded, subset, as a base64 WOFF2 inside index.html -> @font-face 'AreesAr')
+  Copyright 2022 The Noto Project Authors (https://github.com/notofonts/arabic)
+  Licensed under the SIL Open Font License, Version 1.1 — https://openfontlicense.org
+  The font is served locally from the game file itself: no Google Fonts / third-party font request is made at runtime.
+
+Latin / fallback text: the player's own system UI fonts (system-ui, Segoe UI, Tahoma) — nothing is downloaded.
