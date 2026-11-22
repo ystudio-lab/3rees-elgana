@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1410">
-<title>عريس الجنة — V2 Golden Hour 2.5D</title>
+<title>عريس الجنة — V2 Golden Hour 2D</title>
 <style>
   html, body {
     margin: 0; height: 100%; background: #1a1410;
@@ -6245,7 +6245,7 @@ function updateCamera(dt, snap = false) {
   // Follow x partially and ignore jump height, so the frame stays steady.
   const px = player.position.x * (GM.on ? GM.camFollow : CAMERA.followX), pz = player.position.z;
   if (GM.on) { camTarget.set(px, 0, pz).add(GM.camOff); lookTarget.set(px, 0, pz).add(GM.camLook); const gf = gmFov(); if (Math.abs(camera.fov - gf) > 0.05) { camera.fov += (gf - camera.fov) * (snap ? 1 : Math.min(1, dt * 4)); camera.updateProjectionMatrix(); } }
-  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); if (STAGE.n === 1 && m01Cam(dt)) snap = true; if (window.__side && window.__side.on) window.__side.apply(camTarget, lookTarget, px, pz); if (window.__gh && window.__gh.camW > 0) window.__gh.camBlend(camTarget, lookTarget, px, pz); }
+  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); if (STAGE.n === 1 && m01Cam(dt)) snap = true; if (window.__side && window.__side.on) window.__side.apply(camTarget, lookTarget, px, pz); if (window.__gh && window.__gh.camW > 0 && !(window.__side && window.__side.on)) window.__gh.camBlend(camTarget, lookTarget, px, pz); }
   const t = snap ? 1 : 1 - Math.exp(-(GM.on ? GM.camDamp : CAMERA.damping) * dt); // frame-rate independent smoothing
   camera.position.lerp(camTarget, t);
   if (FX.shake > 0) { FX.shake = Math.max(0, FX.shake - dt); const a = FX.shake * 0.25; camera.position.x += (Math.random() - 0.5) * a; camera.position.y += (Math.random() - 0.5) * a; }
@@ -8046,12 +8046,13 @@ const GH = (() => {
     if (!playing) API.t = 0;
     if (API.t > 0 && ui.mode === 'playing') API.t = Math.max(0, API.t - dt);
     API.camW = API.t > 0 ? Math.min(ss((API.dur - API.t) / 0.6), ss(API.t / 0.9)) : 0;
-    if (API.boost && API.camW > 0) { state.invuln = Math.max(state.invuln, 0.26); API.cover = true; }   // boost cam hides the road ahead: brief cover (even blink phase = visible)
+    if (API.boost && API.camW > 0 && !(window.__side && window.__side.on)) { state.invuln = Math.max(state.invuln, 0.26); API.cover = true; }   // boost cam hides the road ahead: brief cover (even blink phase = visible)
     else if (API.cover) { API.cover = false; if (state.invuln > 0.09 && state.invuln <= 0.27) state.invuln = 0.09; }
     if (cast) cast.forEach((c, i) => { const on = API.camW > 0.01; c.visible = on; if (!on) return;
       c.position.set((i - 1) * 1.7 * (i === 1 ? 0 : 1) + (i === 1 ? player.position.x * 0.5 : 0), 0, pz + (i === 0 ? 3.4 : 5.2) + (1 - API.camW) * 4);
       window.AreesCast.animate(c, 'run', clock.elapsedTime + i * 0.3, dt); });
   };
+  Object.defineProperty(API, 'cast', { get: () => cast });
   return API;
 })();
 window.__gh = GH;
@@ -8088,22 +8089,75 @@ const TOON = (() => {
 window.__toon = TOON;
 // ======================= V2 SIDE 2.5D: side-on camera, near-side street clipped away (gameplay untouched) =======================
 const SIDE = (() => {
-  const API = { off: new THREE.Vector3(9, 3.2, 2.5), look: new THREE.Vector3(0, 2.6, -3.5), fov: 70 };   // side-on, slightly behind: portrait frame still shows ~10 m of road ahead
+  const API = { off: new THREE.Vector3(19, 12.4, -3.5), look: new THREE.Vector3(0, 3.5, -3.5) };   // telephoto, pure side-on: reads as flat 2D   // side-on, slightly behind: portrait frame still shows ~10 m of road ahead
   try { Object.defineProperty(THREE.ShaderMaterial.prototype, 'clipping', { get() { return true; }, set() {}, configurable: true }); } catch {}   // ink-outline hulls must respect the clip too
-  const clip = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), 3.5)];               // keep x <= 3.5: hides the facades between the camera and the road
+  const clip = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), 4.2)];               // keep x <= 3.5: hides the facades between the camera and the road
   API.active = () => ui.mode === 'playing' && !GM.on && !CINE.on && !INTRO.on && MS.state !== 'VICTORY';
   API.apply = (ct, lt, px, pz) => {
     if (STAGE.n === 1 && (M1.introT > 0 || M1.cutT > 0)) return;                    // M01 opening pan + Bo'ga entrance shot stay as authored
-    ct.set(px * 0.35, 0, pz).add(API.off); lt.set(px * 0.35, 0, pz).add(API.look);
-    if (Math.abs(camera.fov - API.fov) > 0.05 && !(PWR.tray > 0)) { camera.fov += (API.fov - camera.fov) * 0.15; camera.updateProjectionMatrix(); }
+    ct.set(0, 0, pz).add(API.off); lt.set(0, 0, pz).add(API.look);
   };
-  API.tick = () => { const on = API.active(); if (on !== API.on) { API.on = on; renderer.clippingPlanes = on ? clip : []; } };
+  API.tick = () => { const on = API.active(); if (on !== API.on) { API.on = on; renderer.clippingPlanes = on ? clip : []; if (on) API.fd = scene.fog.density; else if (API.fd) scene.fog.density = API.fd; }
+    if (on) scene.fog.density = 0.006; };   // far telephoto camera: thin haze only
   return API;
 })();
 window.__side = SIDE;
+// ======================= V2 PURE 2D: character-sheet sprites + flat side-on telephoto camera (gameplay untouched) =======================
+const TWO = (() => {
+  const SPR = { sayed: { side: 'R', run: 'R', jump: 'R', fall: 'R', front: 'F' }, boga: { side: 'L', run: 'R' }, kabsha: { side: 'L' }, faheem: { side: 'L', run: 'R' },
+    asaliya: { side: 'R' }, hankash: { side: 'L' }, shawky: { side: 'R' }, noga: { side: 'R' } };
+  const L = new THREE.TextureLoader(), tex = {}, live = new Map(), v = new THREE.Vector3(), box = new THREE.Box3();
+  const get = (id, p) => { const k = id + '_' + p; if (!tex[k]) { const t = L.load('assets/v2-2d/' + k + '.webp'); t.colorSpace = THREE.SRGBColorSpace; tex[k] = t; } return tex[k]; };
+  const pose = (id, want) => { const s = SPR[id]; if (!s) return null; for (const p of want) if (s[p]) return [p, s[p]]; return null; };
+  const shown = (o) => { let n = o; while (n) { if (!n.visible) return false; if (n === scene) return true; n = n.parent; } return false; };
+  const tracked = () => { const out = [];
+    try { out.push([sayed, SEL.char, 'player']); } catch {}
+    try { out.push([bogaBossModel, 'boga', 'boss'], [hankBossModel, 'hankash', 'boss'], [hankash, 'hankash', 'npc']); } catch {}
+    try { for (const c of npcs) out.push([c, c.userData.id, 'npc']); } catch {}
+    try { const g = window.__gh; if (g && g.cast) g.cast.forEach((c, i) => out.push([c, ['boga', 'kabsha', 'faheem'][i], 'chase'])); } catch {}
+    return out.filter(([m, id]) => m && SPR[id]); };
+  const fg = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8a5a34'; x.fillRect(0, 0, 256, 128);
+    for (let r = 0; r < 4; r++) for (let k = -1; k < 5; k++) { const ox = (r % 2) * 32 + k * 64; x.fillStyle = ['#c98a52', '#b97a44', '#d39a5e', '#be8048'][(r + k + 8) % 4]; x.fillRect(ox + 3, r * 32 + 3, 58, 26); }
+    x.fillStyle = '#e8c48e'; x.fillRect(0, 0, 256, 6);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(200 / 4, 1); return t; })();
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(200, 3.2).rotateY(Math.PI / 2), new THREE.MeshBasicMaterial({ map: fg, fog: false }));
+  front.position.set(4.15, -1.48, 0); front.visible = false; front.material.userData.outlineParameters = { visible: false }; scene.add(front);   // brick curb filling the frame under the road
+  const under = new THREE.Mesh(new THREE.PlaneGeometry(200, 40).rotateY(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x5e3a1f, fog: false }));
+  under.position.set(4.14, -23, 0); under.visible = false; under.material.userData.outlineParameters = { visible: false }; scene.add(under);
+  const API = { n: 0, live };
+  API.tick = (t) => {
+    front.visible = under.visible = !!(window.__side && window.__side.on); front.position.z = under.position.z = player.position.z; fg.offset.x = -player.position.z / 4;
+    const list = tracked(), seen = new Set(), hide = (API.n++ % 15) === 0;
+    for (const [m, id, role] of list) {
+      seen.add(m); let e = live.get(m);
+      if (!e) { m.updateMatrixWorld(true); box.setFromObject(m); let h = box.max.y - box.min.y; if (!(h > 1.1 && h < 2.6)) h = id === 'shawky' ? 1.95 : 1.75;
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, alphaTest: 0.25, fog: true })); s.center.set(0.5, 0.02); s.visible = false; scene.add(s);
+        e = { s, h }; live.set(m, e); m.traverse((o) => { if (o.isMesh || o.isSkinnedMesh) o.visible = false; }); }
+      if (hide) m.traverse((o) => { if ((o.isMesh || o.isSkinnedMesh) && o !== e.s) o.visible = false; });
+      const on = shown(m); e.s.visible = on; if (!on) continue;
+      let want = ['side'];
+      if (role === 'player') want = !state.grounded ? ['jump', 'run', 'side'] : state.slideLeft > 0 || (state.invuln > 0.3 && ui.mode === 'playing') ? ['fall', 'side'] : ui.mode === 'playing' ? ['run', 'side'] : ['front', 'side'];
+      else if (role === 'chase' || (role === 'boss' && (boss.mode === 'stalk' || boss.mode === 'charge'))) want = ['run', 'side'];
+      const pz = pose(id, want); if (!pz) { e.s.visible = false; continue; }
+      const map = get(id, pz[0]); if (!map.image) { e.s.visible = false; continue; }
+      if (e.s.material.map !== map) { e.s.material.map = map; e.s.material.needsUpdate = true; }
+      m.getWorldPosition(v); const fz = new THREE.Vector3(0, 0, 1).transformDirection(m.matrixWorld).z;
+      const goRight = role === 'player' || role === 'chase' ? true : fz < 0, flip = pz[1] === 'F' ? false : (pz[1] === 'R') !== goRight;
+      const lying = pz[0] === 'fall', H = lying ? e.h * 0.55 : pz[0] === 'jump' ? e.h * 0.95 : e.h, asp = map.image.width / map.image.height;
+      const run = pz[0] === 'run' && ui.mode === 'playing', ph = t * 13 + m.id;
+      const gy = role === 'player' ? player.position.y - PLAYER_Y : v.y;
+      e.s.position.set(v.x, gy + (run ? Math.abs(Math.sin(ph)) * 0.08 : 0), v.z);
+      e.s.scale.set(H * asp * (flip ? -1 : 1) * (run ? 1 + Math.sin(ph * 2) * 0.02 : 1), H * (run ? 1 - Math.sin(ph * 2) * 0.02 : 1), 1);
+      e.s.material.rotation = run ? Math.sin(ph) * 0.035 : 0;
+    }
+    for (const [m, e] of live) if (!seen.has(m)) { scene.remove(e.s); e.s.material.dispose(); live.delete(m); }
+  };
+  return API;
+})();
+window.__two = TWO;
 renderer.setAnimationLoop(() => {
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
-  perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick(); SIDE.tick();
+  perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick(); SIDE.tick(); TWO.tick(clock.elapsedTime);
   if (ui.mode === 'playing' && !state.over) { // menus, pause and results freeze the run
     const n = Math.max(1, Math.round(DEBUG.timeScale));                // M12: fixed sub-steps (tests can speed time up without tunnelling)
     for (let k = 0; k < n && !state.over && ui.mode === 'playing'; k++) stepGame(dt);
