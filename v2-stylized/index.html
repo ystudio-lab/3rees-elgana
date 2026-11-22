@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1410">
-<title>عريس الجنة — V2 Golden Hour 2D</title>
+<title>عريس الجنة — V2 Golden Hour Pixel</title>
 <style>
   html, body {
     margin: 0; height: 100%; background: #1a1410;
@@ -7947,7 +7947,7 @@ function fxRender(dt) {
   if (want && !PFX.lib && !PFX.loading) fxLoad();
   if (want && PFX.lib && PFX.built !== PFX.level) fxBuild();
   const act = want && PFX.ready; if (act !== PFX.active) { PFX.active = act; fxSurfaces(act); }
-  if (!act) return window.__ghOutline ? window.__ghOutline.render(scene, camera) : renderer.render(scene, camera);
+  if (!act) return window.__pixel ? window.__pixel.render() : window.__ghOutline ? window.__ghOutline.render(scene, camera) : renderer.render(scene, camera);
   const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight, k = w + 'x' + h + '@' + renderer.getPixelRatio(); if (k !== PFX.size) { PFX.size = k; PFX.composer.setSize(w, h, false); }
   PFX.composer.render(dt);
 }
@@ -8107,7 +8107,7 @@ const TWO = (() => {
   const SPR = { sayed: { side: 'R', run: 'R', jump: 'R', fall: 'R', front: 'F' }, boga: { side: 'L', run: 'R' }, kabsha: { side: 'L' }, faheem: { side: 'L', run: 'R' },
     asaliya: { side: 'R' }, hankash: { side: 'L' }, shawky: { side: 'R' }, noga: { side: 'R' } };
   const L = new THREE.TextureLoader(), tex = {}, live = new Map(), v = new THREE.Vector3(), box = new THREE.Box3();
-  const get = (id, p) => { const k = id + '_' + p; if (!tex[k]) { const t = L.load('assets/v2-2d/' + k + '.webp'); t.colorSpace = THREE.SRGBColorSpace; tex[k] = t; } return tex[k]; };
+  const get = (id, p) => { const k = id + '_' + p; if (!tex[k]) { const t = L.load('assets/v2-2d/' + k + '.webp'); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; tex[k] = t; } return tex[k]; };
   const pose = (id, want) => { const s = SPR[id]; if (!s) return null; for (const p of want) if (s[p]) return [p, s[p]]; return null; };
   const shown = (o) => { let n = o; while (n) { if (!n.visible) return false; if (n === scene) return true; n = n.parent; } return false; };
   const tracked = () => { const out = [];
@@ -8143,7 +8143,7 @@ const TWO = (() => {
       if (e.s.material.map !== map) { e.s.material.map = map; e.s.material.needsUpdate = true; }
       m.getWorldPosition(v); const fz = new THREE.Vector3(0, 0, 1).transformDirection(m.matrixWorld).z;
       const goRight = role === 'player' || role === 'chase' ? true : fz < 0, flip = pz[1] === 'F' ? false : (pz[1] === 'R') !== goRight;
-      const lying = pz[0] === 'fall', H = lying ? e.h * 0.55 : pz[0] === 'jump' ? e.h * 0.95 : e.h, asp = map.image.width / map.image.height;
+      const lying = pz[0] === 'fall', H = (lying ? e.h * 0.55 : pz[0] === 'jump' ? e.h * 0.95 : e.h) * (window.__pixel ? 1.3 : 1), asp = map.image.width / map.image.height;
       const run = pz[0] === 'run' && ui.mode === 'playing', ph = t * 13 + m.id;
       const gy = role === 'player' ? player.position.y - PLAYER_Y : v.y;
       e.s.position.set(v.x, gy + (run ? Math.abs(Math.sin(ph)) * 0.08 : 0), v.z);
@@ -8155,6 +8155,31 @@ const TWO = (() => {
   return API;
 })();
 window.__two = TWO;
+// ======================= V2 PIXEL STYLE: low-res render buffer, nearest-neighbour upscale (gameplay untouched) =======================
+const PIXEL = (() => {
+  const API = { w: 150, levels: 9 }, setPR = renderer.setPixelRatio.bind(renderer);
+  API.apply = () => { const cw = stage.clientWidth || 390; setPR(API.w / cw); renderer.setSize(cw, stage.clientHeight || 844, false); };
+  renderer.setPixelRatio = () => API.apply();                                      // quality/perf code can't raise it back
+  const c = renderer.domElement.style; c.imageRendering = 'pixelated'; c.setProperty('image-rendering', 'crisp-edges'); c.setProperty('image-rendering', 'pixelated');
+  window.addEventListener('resize', () => setTimeout(API.apply, 0)); API.apply();
+  // palette pass: posterize to a few levels per channel with 4x4 ordered dithering (classic pixel-art banding)
+  const rt = new THREE.WebGLRenderTarget(4, 4, { magFilter: THREE.NearestFilter, minFilter: THREE.NearestFilter, type: THREE.HalfFloatType }), sz = new THREE.Vector2();
+  const qMat = new THREE.ShaderMaterial({ uniforms: { tDiffuse: { value: rt.texture }, uLv: { value: API.levels } }, toneMapped: true, depthTest: false, depthWrite: false,
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float uLv; varying vec2 vUv;
+      float bayer(vec2 p){ int x = int(mod(p.x, 4.0)), y = int(mod(p.y, 4.0)); int i = x + y * 4;
+        int m[16] = int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5); for (int k = 0; k < 16; k++) if (k == i) return (float(m[k]) + 0.5) / 16.0; return 0.5; }
+      void main(){ gl_FragColor = texture2D(tDiffuse, vUv);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+        float d = bayer(gl_FragCoord.xy) - 0.5; gl_FragColor.rgb = floor(gl_FragColor.rgb * uLv + 0.5 + d * 0.35) / uLv; }` });
+  const qScene = new THREE.Scene(), qCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), qMat); quad.frustumCulled = false; qScene.add(quad);
+  API.render = () => { renderer.getDrawingBufferSize(sz); if (rt.width !== sz.x || rt.height !== sz.y) rt.setSize(sz.x, sz.y);
+    renderer.setRenderTarget(rt); if (window.__ghOutline) window.__ghOutline.render(scene, camera); else renderer.render(scene, camera);
+    renderer.setRenderTarget(null); const cp = renderer.clippingPlanes; renderer.clippingPlanes = []; renderer.render(qScene, qCam); renderer.clippingPlanes = cp; };
+  return API;
+})();
+window.__pixel = PIXEL;
 renderer.setAnimationLoop(() => {
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
   perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick(); SIDE.tick(); TWO.tick(clock.elapsedTime);
