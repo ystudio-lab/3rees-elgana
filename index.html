@@ -4273,7 +4273,7 @@ function renderMissionHud(force) {
   mh.bossFill.style.width = (boss.hp / BOSS_CFG.hp * 100) + '%';
 }
 function banner(text, cls = '') { mh.banner.textContent = text; mh.banner.className = 'ui show ' + cls; clearTimeout(mh.bannerT); mh.bannerT = setTimeout(() => (mh.banner.className = 'ui'), 2200); }
-function warn(text, cls) { mh.warn.style.top = STAGE.n === 1 && boss.mode !== 'hidden' ? '29.5%' : ''; mh.warn.textContent = text; mh.warn.className = 'ui show ' + cls; clearTimeout(mh.warnT); mh.warnT = setTimeout(() => (mh.warn.className = 'ui'), 1300); }
+function warn(text, cls) { mh.warn.style.top = STAGE.n === 1 && boss.mode !== 'hidden' ? (mh.banner.classList.contains('show') ? '35%' : '29.5%') : ''; mh.warn.textContent = text; mh.warn.className = 'ui show ' + cls; clearTimeout(mh.warnT); mh.warnT = setTimeout(() => (mh.warn.className = 'ui'), 1300); }
 
 // ---- Power-ups (M12) ----
 // Mahshi pot: 7 s protection — the pot becomes a helmet with a golden aura and Sayed smashes through obstacles.
