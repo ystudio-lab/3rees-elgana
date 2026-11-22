@@ -873,60 +873,60 @@
   #menuCar, #menu .mission-card, #charsBtn { display: none !important; }
   @media (prefers-reduced-motion: reduce) { .fl-logo, .fl-shimmer i { animation: none; } }
 
-  /* ===== M01 ONLY — premium HUD + controls (scoped to body[data-m="1"]; other missions keep their existing UI) ===== */
+  /* ===== M01 ONLY — premium HUD + controls (scoped to body:is([data-m="1"],[data-m="10"]); other missions keep their existing UI) ===== */
   :root { --k: .92; --ctl-edge: max(12px, env(safe-area-inset-right, 0px)); --ctl-bot: calc(env(safe-area-inset-bottom, 0px) + 18px + var(--ctl-lift, 0px)); --glass: rgba(10,29,49,.55); --glass-line: rgba(255,214,140,.5); }
   #joy, #ctlAct, #hudChar { display: none; }
-  body[data-m="1"] #joy, body[data-m="1"] #ctlAct { display: block; } body[data-m="1"] #hudChar { display: block; }
+  body:is([data-m="1"],[data-m="10"]) #joy, body:is([data-m="1"],[data-m="10"]) #ctlAct { display: block; } body:is([data-m="1"],[data-m="10"]) #hudChar { display: block; }
   /* -- top HUD: pause + radio | score | health + portrait; objective underneath; resources below -- */
-  body[data-m="1"] #pauseBtn { width: 40px; height: 40px; border-radius: 13px; top: var(--top); left: 12px; background: var(--glass); border: 1.5px solid var(--glass-line); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
-  body[data-m="1"] #pauseBtn::before { width: 17px; height: 17px; }
-  body[data-m="1"] #radioBtn { top: var(--top) !important; left: 60px !important; width: 40px !important; height: 40px !important; border-radius: 13px !important; background: var(--glass) !important; border: 1.5px solid var(--glass-line) !important; box-shadow: 0 3px 10px rgba(0,0,0,.35) !important; }
-  body[data-m="1"] #radioBtn svg { width: 19px; height: 19px; }
-  body[data-m="1"] #score { top: var(--top); height: 40px; box-sizing: border-box; padding: 0 14px 0 30px; min-width: 0; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
-  body[data-m="1"] #score { padding: 0 14px; gap: 6px; justify-content: center; } body[data-m="1"] #score::before { position: static; flex: none; width: 16px; height: 16px; margin: 0; } body[data-m="1"] #scoreVal { font-size: 20px; line-height: 1; }
-  body[data-m="1"] #hudChar { position: absolute; top: var(--top); right: 12px; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E6A82E; object-fit: cover; object-position: 50% 18%; background: radial-gradient(circle at 50% 30%, #2a5d8c, #0A1D31); box-shadow: 0 3px 10px rgba(0,0,0,.4); z-index: 12; pointer-events: none; }
-  body[data-m="1"] #hits { top: calc(var(--top) + 4px); right: 60px; transform: none; height: 34px; box-sizing: border-box; padding: 0 9px; gap: 2px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
-  body[data-m="1"] #hits .h { width: 17px; height: 17px; }
-  body[data-m="1"] #progress { top: calc(var(--top) + 52px); left: 12px; right: 12px; padding: 5px 12px 7px; border-radius: 14px; border: 1.5px solid rgba(255,214,140,.3); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); }
-  body[data-m="1"] #progress .ptop { font-size: 13px; justify-content: center; } body[data-m="1"] #progress .ptop span { color: #fff3d6; } body[data-m="1"] #pPct { display: none; }
-  body[data-m="1"] #progress .pbar { height: 5px; margin-top: 5px; border: 0; background: rgba(255,255,255,.16); } body[data-m="1"] #progress .pbar i { border-radius: 4px; } body[data-m="1"] #progress .pm { height: 9px; top: -2px; }
-  body[data-m="1"] #caneChip { top: calc(var(--top) + 102px); left: 12px; right: auto; height: 30px; box-sizing: border-box; padding: 0 10px 0 3px; gap: 6px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); opacity: 1; flex-direction: row-reverse; }
-  body[data-m="1"] #caneChip > span, body[data-m="1"] #caneChip small { display: none; }
-  body[data-m="1"] #caneChip i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 50% 22%, #2a5d8c, #0A1D31 85%); border: 1.5px solid #E6A82E; -webkit-mask: none; mask: none; box-shadow: none; position: relative; }
-  body[data-m="1"] #caneChip i::after { content: ''; position: absolute; inset: 4px; background: #9fd35c; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; }
-  body[data-m="1"] #caneChip b { font-size: 13px; font-weight: 900; color: #fff6d6; font-variant-numeric: tabular-nums; } body[data-m="1"] #caneChip.done { background: rgba(28,100,52,.6); }
-  body[data-m="1"] #bossBar { top: calc(var(--top) + 140px) !important; left: 12px !important; right: 12px !important; }
+  body:is([data-m="1"],[data-m="10"]) #pauseBtn { width: 40px; height: 40px; border-radius: 13px; top: var(--top); left: 12px; background: var(--glass); border: 1.5px solid var(--glass-line); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+  body:is([data-m="1"],[data-m="10"]) #pauseBtn::before { width: 17px; height: 17px; }
+  body:is([data-m="1"],[data-m="10"]) #radioBtn { top: var(--top) !important; left: 60px !important; width: 40px !important; height: 40px !important; border-radius: 13px !important; background: var(--glass) !important; border: 1.5px solid var(--glass-line) !important; box-shadow: 0 3px 10px rgba(0,0,0,.35) !important; }
+  body:is([data-m="1"],[data-m="10"]) #radioBtn svg { width: 19px; height: 19px; }
+  body:is([data-m="1"],[data-m="10"]) #score { top: var(--top); height: 40px; box-sizing: border-box; padding: 0 14px 0 30px; min-width: 0; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
+  body:is([data-m="1"],[data-m="10"]) #score { padding: 0 14px; gap: 6px; justify-content: center; } body:is([data-m="1"],[data-m="10"]) #score::before { position: static; flex: none; width: 16px; height: 16px; margin: 0; } body:is([data-m="1"],[data-m="10"]) #scoreVal { font-size: 20px; line-height: 1; }
+  body:is([data-m="1"],[data-m="10"]) #hudChar { position: absolute; top: var(--top); right: 12px; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E6A82E; object-fit: cover; object-position: 50% 18%; background: radial-gradient(circle at 50% 30%, #2a5d8c, #0A1D31); box-shadow: 0 3px 10px rgba(0,0,0,.4); z-index: 12; pointer-events: none; }
+  body:is([data-m="1"],[data-m="10"]) #hits { top: calc(var(--top) + 4px); right: 60px; transform: none; height: 34px; box-sizing: border-box; padding: 0 9px; gap: 2px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.35); display: flex; align-items: center; }
+  body:is([data-m="1"],[data-m="10"]) #hits .h { width: 17px; height: 17px; }
+  body:is([data-m="1"],[data-m="10"]) #progress { top: calc(var(--top) + 52px); left: 12px; right: 12px; padding: 5px 12px 7px; border-radius: 14px; border: 1.5px solid rgba(255,214,140,.3); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); }
+  body:is([data-m="1"],[data-m="10"]) #progress .ptop { font-size: 13px; justify-content: center; } body:is([data-m="1"],[data-m="10"]) #progress .ptop span { color: #fff3d6; } body:is([data-m="1"],[data-m="10"]) #pPct { display: none; }
+  body:is([data-m="1"],[data-m="10"]) #progress .pbar { height: 5px; margin-top: 5px; border: 0; background: rgba(255,255,255,.16); } body:is([data-m="1"],[data-m="10"]) #progress .pbar i { border-radius: 4px; } body:is([data-m="1"],[data-m="10"]) #progress .pm { height: 9px; top: -2px; }
+  body:is([data-m="1"],[data-m="10"]) #caneChip { top: calc(var(--top) + 102px); left: 12px; right: auto; height: 30px; box-sizing: border-box; padding: 0 10px 0 3px; gap: 6px; border-radius: 999px; border: 1.5px solid var(--glass-line); background: var(--glass); box-shadow: 0 3px 10px rgba(0,0,0,.3); opacity: 1; flex-direction: row-reverse; }
+  body:is([data-m="1"],[data-m="10"]) #caneChip > span, body:is([data-m="1"],[data-m="10"]) #caneChip small { display: none; }
+  body:is([data-m="1"],[data-m="10"]) #caneChip i { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 50% 22%, #2a5d8c, #0A1D31 85%); border: 1.5px solid #E6A82E; -webkit-mask: none; mask: none; box-shadow: none; position: relative; }
+  body:is([data-m="1"],[data-m="10"]) #caneChip i::after { content: ''; position: absolute; inset: 4px; background: #9fd35c; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M16.5 2.5 21.5 7.5 9 20 4 15 16.5 2.5Z%22/%3E%3C/svg%3E") center/contain no-repeat; }
+  body:is([data-m="1"],[data-m="10"]) #caneChip b { font-size: 13px; font-weight: 900; color: #fff6d6; font-variant-numeric: tabular-nums; } body:is([data-m="1"],[data-m="10"]) #caneChip.done { background: rgba(28,100,52,.6); }
+  body:is([data-m="1"],[data-m="10"]) #bossBar { top: calc(var(--top) + 140px) !important; left: 12px !important; right: 12px !important; }
   /* -- dialogue: temporary, top of the screen, never over the controls or the lane -- */
-  body[data-m="1"] #speaker, body[data-m="1"] #combat.show ~ #speaker { top: calc(var(--top) + 140px); bottom: auto; left: 12px; right: 12px; padding: 5px 12px 5px 5px; gap: 9px; border: 1.5px solid var(--glass-line); border-radius: 16px; background: rgba(10,29,49,.78); box-shadow: 0 6px 16px rgba(0,0,0,.4); }
-  body[data-m="1"] #spImg { width: 38px; height: 42px; border-width: 2px; border-radius: 11px; } body[data-m="1"] #speaker #spText { font-size: 14px; }
+  body:is([data-m="1"],[data-m="10"]) #speaker, body:is([data-m="1"],[data-m="10"]) #combat.show ~ #speaker { top: calc(var(--top) + 140px); bottom: auto; left: 12px; right: 12px; padding: 5px 12px 5px 5px; gap: 9px; border: 1.5px solid var(--glass-line); border-radius: 16px; background: rgba(10,29,49,.78); box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+  body:is([data-m="1"],[data-m="10"]) #spImg { width: 38px; height: 42px; border-width: 2px; border-radius: 11px; } body:is([data-m="1"],[data-m="10"]) #speaker #spText { font-size: 14px; }
   /* -- power-ups sit above the joystick -- */
-  body[data-m="1"] #powers { left: var(--ctl-edge); right: auto; transform: none; bottom: calc(var(--ctl-bot) + 108px * var(--k) + 12px); justify-content: flex-start; }
-  [data-chand="l"][data-m="1"] #powers { left: auto; right: var(--ctl-edge); }
-  body[data-m="1"] .pw { width: 50px; height: 50px; } body[data-m="1"] .pw img { width: 34px; height: 34px; margin-top: -4px; }
-  body[data-m="1"] .pw b { bottom: -3px; right: -5px; padding: 0 6px; border-radius: 999px; background: #08192A; border: 1.5px solid #E6A82E; font-size: 11px; line-height: 16px; }
-  body[data-m="1"] .pw small { display: none; }
+  body:is([data-m="1"],[data-m="10"]) #powers { left: var(--ctl-edge); right: auto; transform: none; bottom: calc(var(--ctl-bot) + 108px * var(--k) + 12px); justify-content: flex-start; }
+  [data-chand="l"]:is([data-m="1"],[data-m="10"]) #powers { left: auto; right: var(--ctl-edge); }
+  body:is([data-m="1"],[data-m="10"]) .pw { width: 50px; height: 50px; } body:is([data-m="1"],[data-m="10"]) .pw img { width: 34px; height: 34px; margin-top: -4px; }
+  body:is([data-m="1"],[data-m="10"]) .pw b { bottom: -3px; right: -5px; padding: 0 6px; border-radius: 999px; background: #08192A; border: 1.5px solid #E6A82E; font-size: 11px; line-height: 16px; }
+  body:is([data-m="1"],[data-m="10"]) .pw small { display: none; }
   /* -- controls: translucent glass, clean icons, subtle pressed state -- */
-  body[data-m="1"] #ctlAct { position: absolute; inset: 0; pointer-events: none; z-index: 24; direction: ltr; }
+  body:is([data-m="1"],[data-m="10"]) #ctlAct { position: absolute; inset: 0; pointer-events: none; z-index: 24; direction: ltr; }
   .cb.sl-p, #combat .cbtn.sl-p { --w: 72; --ox: 0; --oy: 0; } .cb.sl-a { --w: 56; --ox: 84; --oy: 6; }
-  body[data-m="1"] #toolBtn { --w: 54; --ox: 11; --oy: 87; } body[data-m="1"] #guardBtn { --w: 52; --ox: 76; --oy: 66; }
-  body[data-m="1"] #ctlAct .cb, body[data-m="1"] #combat .cbtn { position: absolute; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; display: grid; place-items: center; padding: 0; margin: 0; cursor: pointer;
+  body:is([data-m="1"],[data-m="10"]) #toolBtn { --w: 54; --ox: 11; --oy: 87; } body:is([data-m="1"],[data-m="10"]) #guardBtn { --w: 52; --ox: 76; --oy: 66; }
+  body:is([data-m="1"],[data-m="10"]) #ctlAct .cb, body:is([data-m="1"],[data-m="10"]) #combat .cbtn { position: absolute; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; display: grid; place-items: center; padding: 0; margin: 0; cursor: pointer;
     width: calc(var(--w) * var(--k) * 1px); height: calc(var(--w) * var(--k) * 1px); bottom: calc(var(--ctl-bot) + var(--oy) * var(--k) * 1px); right: calc(var(--ctl-edge) + var(--ox) * var(--k) * 1px); left: auto; border-radius: 50%; color: #FFE9B0;
     border: 1.5px solid rgba(255,224,160,.55); background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); transition: transform .08s ease-out, background .12s, box-shadow .12s, filter .15s; }
-  [data-chand="l"] body[data-m="1"] #ctlAct .cb, body[data-chand="l"][data-m="1"] #ctlAct .cb, body[data-chand="l"][data-m="1"] #combat .cbtn { right: auto; left: calc(max(12px, env(safe-area-inset-left, 0px)) + var(--ox) * var(--k) * 1px); }
-  body[data-m="1"] #ctlAct .cb.sl-p { background: radial-gradient(circle at 50% 28%, rgba(255,214,110,.62), rgba(214,140,20,.5) 78%); border-color: rgba(255,236,170,.8); color: #fff8e0; }
-  body[data-m="1"] #ctlAct .cb .ic { width: calc(var(--w) * var(--k) * .46px); height: calc(var(--w) * var(--k) * .46px); display: block; } body[data-m="1"] #ctlAct .cb .ic svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
-  body[data-m="1"] .cb .st { fill: none; stroke: currentColor; stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
-  body[data-m="1"] #ctlAct .cb.on, body[data-m="1"] #combat .cbtn:active:not(.cool), body[data-m="1"] #combat .cbtn.up { transform: scale(.92); background: radial-gradient(circle at 50% 28%, rgba(255,224,130,.85), rgba(240,170,40,.7) 78%); border-color: #FFF3C4; color: #3a2204; box-shadow: 0 0 0 3px rgba(255,224,138,.35), 0 0 18px rgba(255,190,61,.65), inset 0 2px 8px rgba(0,0,0,.25); }
-  body[data-m="1"] #combat { position: absolute; inset: 0; display: none; pointer-events: none; z-index: 26; } body[data-m="1"] #combat.show { display: block; }
-  body[data-m="1"] #combat .cbtn small { display: none; } body[data-m="1"] #combat .cbtn svg { width: calc(var(--w) * var(--k) * .48px); height: calc(var(--w) * var(--k) * .48px); fill: currentColor; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
-  body[data-m="1"] #combat .cbtn.guard { background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); }
-  body[data-m="1"] #combat #toolBtn { background: radial-gradient(circle at 50% 28%, rgba(233,75,60,.6), rgba(120,24,16,.6) 78%); }
-  body[data-m="1"] #combat .cbtn i { top: -4px; inset-inline-end: -4px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #FFBE3D; color: #3a2204; border: 2px solid #08192A; font: 900 12px/16px system-ui; }
-  body[data-m="1"] #combat .cbtn.cool { filter: grayscale(.7) brightness(.8); }
+  [data-chand="l"] body:is([data-m="1"],[data-m="10"]) #ctlAct .cb, body[data-chand="l"]:is([data-m="1"],[data-m="10"]) #ctlAct .cb, body[data-chand="l"]:is([data-m="1"],[data-m="10"]) #combat .cbtn { right: auto; left: calc(max(12px, env(safe-area-inset-left, 0px)) + var(--ox) * var(--k) * 1px); }
+  body:is([data-m="1"],[data-m="10"]) #ctlAct .cb.sl-p { background: radial-gradient(circle at 50% 28%, rgba(255,214,110,.62), rgba(214,140,20,.5) 78%); border-color: rgba(255,236,170,.8); color: #fff8e0; }
+  body:is([data-m="1"],[data-m="10"]) #ctlAct .cb .ic { width: calc(var(--w) * var(--k) * .46px); height: calc(var(--w) * var(--k) * .46px); display: block; } body:is([data-m="1"],[data-m="10"]) #ctlAct .cb .ic svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  body:is([data-m="1"],[data-m="10"]) .cb .st { fill: none; stroke: currentColor; stroke-width: 2.7; stroke-linecap: round; stroke-linejoin: round; }
+  body:is([data-m="1"],[data-m="10"]) #ctlAct .cb.on, body:is([data-m="1"],[data-m="10"]) #combat .cbtn:active:not(.cool), body:is([data-m="1"],[data-m="10"]) #combat .cbtn.up { transform: scale(.92); background: radial-gradient(circle at 50% 28%, rgba(255,224,130,.85), rgba(240,170,40,.7) 78%); border-color: #FFF3C4; color: #3a2204; box-shadow: 0 0 0 3px rgba(255,224,138,.35), 0 0 18px rgba(255,190,61,.65), inset 0 2px 8px rgba(0,0,0,.25); }
+  body:is([data-m="1"],[data-m="10"]) #combat { position: absolute; inset: 0; display: none; pointer-events: none; z-index: 26; } body:is([data-m="1"],[data-m="10"]) #combat.show { display: block; }
+  body:is([data-m="1"],[data-m="10"]) #combat .cbtn small { display: none; } body:is([data-m="1"],[data-m="10"]) #combat .cbtn svg { width: calc(var(--w) * var(--k) * .48px); height: calc(var(--w) * var(--k) * .48px); fill: currentColor; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  body:is([data-m="1"],[data-m="10"]) #combat .cbtn.guard { background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+  body:is([data-m="1"],[data-m="10"]) #combat #toolBtn { background: radial-gradient(circle at 50% 28%, rgba(233,75,60,.6), rgba(120,24,16,.6) 78%); }
+  body:is([data-m="1"],[data-m="10"]) #combat .cbtn i { top: -4px; inset-inline-end: -4px; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #FFBE3D; color: #3a2204; border: 2px solid #08192A; font: 900 12px/16px system-ui; }
+  body:is([data-m="1"],[data-m="10"]) #combat .cbtn.cool { filter: grayscale(.7) brightness(.8); }
   /* -- joystick -- */
-  body[data-m="1"] #joy { position: absolute; z-index: 24; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: content-box;
+  body:is([data-m="1"],[data-m="10"]) #joy { position: absolute; z-index: 24; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: content-box;
     width: calc(108px * var(--k)); height: calc(108px * var(--k)); padding: calc(10px * var(--k)); margin: calc(-10px * var(--k)); left: max(12px, env(safe-area-inset-left, 0px)); bottom: var(--ctl-bot); }
-  [data-chand="l"][data-m="1"] #joy { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); }
+  [data-chand="l"]:is([data-m="1"],[data-m="10"]) #joy { left: auto; right: max(12px, env(safe-area-inset-right, 0px)); }
   #joy .jr { position: absolute; inset: calc(10px * var(--k)); border-radius: 50%; border: 1.5px solid rgba(255,224,160,.5); background: radial-gradient(circle at 50% 40%, rgba(60,110,160,.38), rgba(10,29,49,.55) 78%); box-shadow: 0 4px 12px rgba(0,0,0,.35), inset 0 2px 10px rgba(0,0,0,.35); transition: border-color .12s, box-shadow .12s; }
   #joy.on .jr { border-color: rgba(255,236,170,.9); box-shadow: 0 4px 12px rgba(0,0,0,.35), 0 0 16px rgba(255,190,61,.45), inset 0 2px 10px rgba(0,0,0,.35); }
   #joy .ar { position: absolute; width: 0; height: 0; opacity: .7; border: calc(5px * var(--k)) solid transparent; }
@@ -934,7 +934,30 @@
   #joy .ar.l { left: 8%; top: 50%; margin-top: calc(-5px * var(--k)); border-right: calc(8px * var(--k)) solid #FFD9A0; border-left: 0; } #joy .ar.r { right: 8%; top: 50%; margin-top: calc(-5px * var(--k)); border-left: calc(8px * var(--k)) solid #FFD9A0; border-right: 0; }
   #joy .jk { position: absolute; left: 50%; top: 50%; width: calc(46px * var(--k)); height: calc(46px * var(--k)); margin: calc(-23px * var(--k)) 0 0 calc(-23px * var(--k)); border-radius: 50%; will-change: transform; border: 1.5px solid rgba(255,240,190,.8);
     background: radial-gradient(circle at 38% 30%, rgba(255,236,160,.9), rgba(235,160,30,.75) 80%); box-shadow: 0 3px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.6); } #joy.on .jk { background: radial-gradient(circle at 38% 30%, #fff8d2, rgba(255,200,70,.95) 80%); box-shadow: 0 2px 6px rgba(0,0,0,.45), 0 0 14px rgba(255,200,70,.8); }
-  /* ===== WM — full-screen illustrated world map (Levels screen) ===== */
+    /* ===== M02-M09, M11, M12: the M01 glass look with icon-only buttons (same joystick / button language) ===== */
+  body #gmBtns { padding: 0 var(--ctl-edge) !important; } body #gmBtns .grp { gap: calc(12px * var(--k)); align-items: flex-end; }
+  body #gmBtns .gmb, body #zBtns .zb { display: grid; place-items: center; padding: 0; font-size: 0; color: #FFE9B0; text-shadow: none; border: 1.5px solid rgba(255,224,160,.55); border-radius: 50%;
+    background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); transition: transform .08s ease-out, background .12s, box-shadow .12s, filter .15s; }
+  body #gmBtns .gmb { width: calc(64px * var(--k)); height: calc(64px * var(--k)); min-width: 0; }
+  body #gmBtns .gmb.big, body #zBtns .zb.big { color: #fff8e0; border-color: rgba(255,236,170,.8); background: radial-gradient(circle at 50% 28%, rgba(255,214,110,.62), rgba(214,140,20,.5) 78%); }
+  body #gmBtns .gmb.big { width: calc(80px * var(--k)); height: calc(80px * var(--k)); }
+  body #gmBtns .gmb.alt, body #zBtns .zb[data-id="T"] { background: radial-gradient(circle at 50% 28%, rgba(233,75,60,.6), rgba(120,24,16,.6) 78%); }
+  body #zBtns .zb.alt { background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); }
+  body #zBtns .zb.noga { background: radial-gradient(circle at 50% 28%, rgba(235,110,170,.62), rgba(110,24,70,.62) 78%); }
+  body #gmBtns .gmb.on, body #zBtns .zb.on { transform: scale(.92); color: #3a2204; border-color: #FFF3C4; background: radial-gradient(circle at 50% 28%, rgba(255,224,130,.85), rgba(240,170,40,.7) 78%); box-shadow: 0 0 0 3px rgba(255,224,138,.35), 0 0 18px rgba(255,190,61,.65), inset 0 2px 8px rgba(0,0,0,.25); }
+  body #zBtns .zb.cd { filter: grayscale(.7) brightness(.8); }
+  .gi { display: block; width: 46%; height: 46%; } .gi svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  .gi .st { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; } .gmb.mir .gi svg { transform: scaleX(-1); } .gmb.big .gi { width: 50%; height: 50%; }
+  body #zBtns .zb[data-id="T"]::after { top: -4px; right: -4px; border: 2px solid #08192A; background: #FFBE3D; }
+  body #zBtns .zb.noga::after { background: rgba(10,29,49,.55); border-radius: 50%; }
+  body #zStick .zr, body #dragViz { border: 1.5px solid rgba(255,224,160,.5); background: radial-gradient(circle at 50% 40%, rgba(60,110,160,.38), rgba(10,29,49,.55) 78%); box-shadow: 0 4px 12px rgba(0,0,0,.35), inset 0 2px 10px rgba(0,0,0,.35); }
+  body #zStick.on .zr { border-color: rgba(255,236,170,.9); box-shadow: 0 4px 12px rgba(0,0,0,.35), 0 0 16px rgba(255,190,61,.45), inset 0 2px 10px rgba(0,0,0,.35); }
+  body #zStick .zk, body #dragViz i { border: 1.5px solid rgba(255,240,190,.8); background: radial-gradient(circle at 38% 30%, rgba(255,236,160,.9), rgba(235,160,30,.75) 80%); box-shadow: 0 3px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.6); }
+  body #zStick .ar { position: absolute; width: 0; height: 0; opacity: .7; border: 5px solid transparent; }
+  body #zStick .ar.u { top: 12%; left: 50%; margin-left: -5px; border-bottom: 8px solid #FFD9A0; border-top: 0; } body #zStick .ar.d { bottom: 12%; left: 50%; margin-left: -5px; border-top: 8px solid #FFD9A0; border-bottom: 0; }
+  body #zStick .ar.l { left: 12%; top: 50%; margin-top: -5px; border-right: 8px solid #FFD9A0; border-left: 0; } body #zStick .ar.r { right: 12%; top: 50%; margin-top: -5px; border-left: 8px solid #FFD9A0; border-right: 0; }
+  body #gmSym button { border-radius: 20px; border: 1.5px solid rgba(255,224,160,.55); color: #FFE9B0; background: radial-gradient(circle at 50% 28%, rgba(60,110,160,.55), rgba(10,29,49,.62) 75%); box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+/* ===== WM — full-screen illustrated world map (Levels screen) ===== */
   body.on-map #radioPrompt { display: none !important; }
   #levels.wm-screen { display: block; padding: 0; gap: 0; background: #ecc982; overflow: hidden; }
   #levels.wm-screen::before, #levels.wm-screen::after { display: none; }
@@ -6304,11 +6327,29 @@ function gmSet(k, v, text, cls) {
   if (text !== undefined && o.tx !== text) { o.tx = text; o.s.innerHTML = text; }
   if (cls !== undefined && o.cls !== cls) { o.cls = cls; o.el.classList.remove('bad', 'warn'); if (cls) o.el.classList.add(cls); }
 }
+// ---- control icons (24x24, stroke style): one set shared by every mission's buttons ----
+const GI = {
+  brake: '<circle class="st" cx="12" cy="12" r="5.2"/><path class="st" d="M12 9.2v3.5"/><circle cx="12" cy="15.1" r="1" fill="currentColor"/><path class="st" d="M5.3 7.4a8.2 8.2 0 0 0 0 9.2M18.7 7.4a8.2 8.2 0 0 1 0 9.2"/>',
+  bolt: '<path class="st" d="M13.4 2.6 5.6 13.4h5.7l-1.3 8 8.6-11.2h-5.8z"/>',
+  gas: '<path class="st" d="M8.8 3.4h6.4l1.9 17.2H6.9z"/><path class="st" d="M8.3 8.2h7.4M7.9 12.3h8.2M7.5 16.4h9"/>',
+  horn: '<path class="st" d="M3.4 9.8h3.7l5.4-4.1v12.6l-5.4-4.1H3.4z"/><path class="st" d="M15.7 9.2a4 4 0 0 1 0 5.6M18.4 6.6a7.7 7.7 0 0 1 0 10.8"/>',
+  dodge: '<path class="st" d="M4.5 19c0-6.2 3.2-9.6 9.6-9.6H19"/><path class="st" d="M15.8 5.6 19.6 9.4l-3.8 3.8"/>',
+  shield: '<path class="st" d="M12 3.2 19 6v5.3c0 4.7-2.9 7.9-7 9.6-4.1-1.7-7-4.9-7-9.6V6z"/>',
+  walk: '<circle class="st" cx="13.4" cy="4.7" r="1.9"/><path class="st" d="M12.5 8.7 9.7 12.7l3 2.2-1.2 5.4M12.5 8.7l3.2 3.6 3-.6M13.1 14.7l3.6 5.2"/>',
+  hide: '<path class="st" d="M2.6 12s3.4-6.4 9.4-6.4S21.4 12 21.4 12s-3.4 6.4-9.4 6.4S2.6 12 2.6 12z"/><circle class="st" cx="12" cy="12" r="2.7"/><path class="st" d="M4.2 4.2l15.6 15.6"/>',
+  eye: '<path class="st" d="M2.6 12s3.4-6.4 9.4-6.4S21.4 12 21.4 12s-3.4 6.4-9.4 6.4S2.6 12 2.6 12z"/><circle class="st" cx="12" cy="12" r="2.7"/>',
+  throw: '<path class="st" d="M9.2 7.4h11.2v9.2H9.2z"/><path class="st" d="M9.2 7.4l5.6 4.9 5.6-4.9"/><path class="st" d="M6.9 12H2.7M4.9 9.8 2.7 12l2.2 2.2"/>',
+  cane: '<path class="st" d="M8.4 21V9.4a3.9 3.9 0 0 1 7.8 0"/><path class="st" d="M19.2 5.2l1.6-1.6M20 9.2h2M18.6 13l1.6 1.6"/>',
+  sandal: '<path class="st" d="M10.2 3c3.4 0 5 2.6 5 5.8 0 2.4-1.5 3.9-2.2 6.1-.6 1.9-1.4 3.4-3 3.4s-3.2-1.9-3.2-5.2C6.8 8.200 6.800 3 10.200 3z"/><path class="st" d="M10.2 7.500 13.300 11M10.200 7.500 7.100 11"/>',
+  call: '<path class="st" d="M4 5.5h16v10.6h-7.6L8 20.2v-4.100H4z"/><path class="st" d="M12 8.700v3.100"/><circle cx="12" cy="13.800" r=".95" fill="currentColor"/>'
+};
+const gi = (k) => `<span class="ic gi"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GI[k] || ''}</svg></span>`;
+function gmIcon(el, k, mir) { if (!el) return; el.innerHTML = gi(k); el.dataset.k = k; el.classList.toggle('mir', !!mir); }
 function gmButtons(list) {
   list = list.filter(b => !(b.id === 'L' || b.id === 'R' || (GM.n === 4 && (b.id === 'F' || b.id === 'B'))));   // M35: arrows are gone — swipe (lanes) or drag (vehicles/stealth), exactly like M01
   gmBtns.innerHTML = ''; GM.btn = {}; const gl = document.createElement('div'), gr = document.createElement('div'); gl.className = gr.className = 'grp'; gmBtns.append(gl, gr);
   for (const b of list) {
-    const el = document.createElement('button'); el.type = 'button'; el.className = 'gmb ' + (b.cls || ''); el.textContent = b.label; el.dataset.id = b.id; el.setAttribute('aria-label', b.label);
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'gmb ' + (b.cls || ''); if (b.icon) gmIcon(el, b.icon, b.mir); else el.textContent = b.label; el.dataset.id = b.id; el.setAttribute('aria-label', b.label);
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch {} b.hold && b.hold(true); b.down && b.down(); });
     const up = () => { if (!el.classList.contains('on')) return; el.classList.remove('on'); b.hold && b.hold(false); b.up && b.up(); };
     el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
@@ -6364,7 +6405,7 @@ for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) joy.addEv
 window.addEventListener('blur', joyRelease);
 function ctlBuild() {                                                           // after every mission (re)start; only M01 shows these controls
   ctlAct.innerHTML = ''; joyRelease();
-  if (STAGE.n !== 1) return;
+  if (STAGE.n !== 1 && STAGE.n !== 10) return;
   for (const [id, key, label, slot, act] of [['J', 'jump', t('ctlJump'), 'p', 'jump'], ['S', 'slide', t('ctlSlide'), 'a', 'slide']]) {
     const el = document.createElement('button'); el.type = 'button'; el.className = 'cb sl-' + slot; el.dataset.id = id; el.setAttribute('aria-label', label);
     el.innerHTML = `<span class="ic">${ctlSvg(key)}</span>`;
@@ -6656,7 +6697,7 @@ GM.modes[3] = () => {
     for (const o of m.doors) if (o.who) { const c = npcs.find(q => q.userData.id === o.who); if (c) { const u = c.userData; u.homeZ = -o.d; u.side = o.side; u.cycle = 0; u.gone = false; u.triggered = false; c.position.set(o.side * NPC.x, ENV.paveH, -o.d); c.rotation.y = o.side > 0 ? -0.65 : 0.65; } }
   };
   m.meters = () => [{ k: 'del', label: gt('delivered') }, { k: 'carry', kind: 'txt', label: gt('carrying') }];
-  m.btns = () => [...steerBtns().map(b => ({ ...b, side: 'l' })), { id: 'eL', label: gt('envL'), side: 'l', cls: 'alt', down: () => m.throwTo(-1) }, { id: 'eR', label: gt('envR'), side: 'r', cls: 'alt', down: () => m.throwTo(1) }];
+  m.btns = () => [...steerBtns().map(b => ({ ...b, side: 'l' })), { id: 'eL', label: gt('envL'), icon: 'throw', side: 'l', cls: 'alt', down: () => m.throwTo(-1) }, { id: 'eR', label: gt('envR'), icon: 'throw', mir: true, side: 'r', cls: 'alt', down: () => m.throwTo(1) }];
   m.key = (c) => { if (c === 'KeyQ' || c === 'KeyZ') m.throwTo(-1); else if (c === 'KeyE' || c === 'KeyC') m.throwTo(1); };
   m.input = (a) => { if (state.over) return; if ((a === 'left' || a === 'right') && inFork(player.position.z) && a !== 'x') { return; }
     if (!act(a)) { state.buffered = a; state.bufferLeft = RUN.bufferTime; } };
@@ -6940,7 +6981,7 @@ function gmVehicle(kind) {
   m.meters = () => { const l = [{ k: 'spd', label: gt('speed') }]; if (CARGO) l.unshift({ k: 'cargo', label: CARGO === 'flowers' ? gt('flowers') : gt('sherbet') }); else l.unshift({ k: 'sup', label: gt('supplies') }); l.push({ k: 'dur', label: gt('durability') }); return l; };
   m.btns = () => [
     { id: 'L', label: gt('left'), side: 'l', hold: (d) => { GM.pL = d; } }, { id: 'R', label: gt('right'), side: 'l', hold: (d) => { GM.pR = d; } },
-    { id: 'B', label: gt('brake'), side: 'r', hold: (d) => { GM.brake = d; } }, { id: 'T', label: gt('boost'), side: 'r', cls: 'big', down: () => m.boost() },
+    { id: 'B', label: gt('brake'), icon: 'brake', side: 'r', hold: (d) => { GM.brake = d; } }, { id: 'T', label: gt('boost'), icon: 'bolt', side: 'r', cls: 'big', down: () => m.boost() },
   ];
   m.boost = () => { if (m.boostCd > 0 || state.over) return; m.boostT = 1.1; m.boostCd = 4.5; SFX.whoosh && SFX.whoosh(); };
   m.input = (a) => { if (a === 'jump') m.boost(); };
@@ -7197,10 +7238,10 @@ GM.modes[11] = () => {
   };
   m.meters = () => [{ k: 'time', label: gt('m11_time') }, { k: 'pax', label: gt('m11_pax') }, { k: 'del', label: gt('m11_del') }, { k: 'score', label: gt('m11_score') }, { k: 'rank', label: gt('m11_rank') }];
   m.btns = () => [
-    { id: 'H', label: gt('m11_horn'), side: 'l', down: () => m.horn() },
-    { id: 'D', label: gt('m11_dodge'), side: 'l', cls: 'alt', down: () => m.dodge() },
-    { id: 'K', label: gt('m11_brake'), side: 'r', hold: (d) => { GM.brake = d; } },
-    { id: 'G', label: gt('m11_gas'), side: 'r', cls: 'big', hold: (d) => { GM.go = d; } },
+    { id: 'H', label: gt('m11_horn'), icon: 'horn', side: 'l', down: () => m.horn() },
+    { id: 'D', label: gt('m11_dodge'), icon: 'dodge', side: 'l', cls: 'alt', down: () => m.dodge() },
+    { id: 'K', label: gt('m11_brake'), icon: 'brake', side: 'r', hold: (d) => { GM.brake = d; } },
+    { id: 'G', label: gt('m11_gas'), icon: 'gas', side: 'r', cls: 'big', hold: (d) => { GM.go = d; } },
   ];
   m.input = (a) => { if (a === 'jump') m.dodge(); }; m.key = (c) => { if (c === 'Space' || c === 'ShiftLeft' || c === 'KeyE') m.dodge(); else if (c === 'KeyH') m.horn(); };
   const say = (k, who) => { if (m.said[k]) return; m.said[k] = 1; speak(who, who + '_' + k, gt('m11_' + k)); };
@@ -7325,7 +7366,7 @@ GM.modes[11] = () => {
         for (const wx of [-0.93, 0.93]) for (const wz of [-1.5, 1.48]) { m.wm.makeRotationX(-a); m.wm.setPosition(wx, 0.34, wz); m.wm.premultiply(m.wr); m.wheels.tire.setMatrixAt(n, m.wm); m.wheels.rim.setMatrixAt(n, m.wm); n++; } });
       m.wheels.tire.instanceMatrix.needsUpdate = m.wheels.rim.instanceMatrix.needsUpdate = true; }
     // context-sensitive dodge / block button
-    const nc = threat() ? 'dodge' : adjacent() ? 'defend' : 'dodge', db = GM.btn && GM.btn.D; if (db) { if (m.ctx !== nc || db.dataset.t !== nc) { m.ctx = nc; db.dataset.t = nc; db.textContent = gt(nc === 'dodge' ? 'm11_dodge' : 'm11_defend'); } const hot = threat() || adjacent(); db.style.boxShadow = hot ? '0 6px 0 #7a1a0e, 0 0 0 4px #fff, 0 0 24px #ff5a3a' : ''; }
+    const nc = threat() ? 'dodge' : adjacent() ? 'defend' : 'dodge', db = GM.btn && GM.btn.D; if (db) { if (m.ctx !== nc || db.dataset.t !== nc) { m.ctx = nc; db.dataset.t = nc; gmIcon(db, nc === 'dodge' ? 'dodge' : 'shield'); db.setAttribute('aria-label', gt(nc === 'dodge' ? 'm11_dodge' : 'm11_defend')); } const hot = threat() || adjacent(); db.style.boxShadow = hot ? '0 0 0 3px #fff, 0 0 24px #ff5a3a, inset 0 1px 0 rgba(255,255,255,.22)' : ''; }
     // time / score sync
     state.bonus = m.score - Math.max(0, Math.floor(-pz2));
     if (go && m.time <= 0 && !state.over) { m.time = 0; gmFinish(false, 'lose11time'); }
@@ -7375,15 +7416,15 @@ GM.modes[8] = () => {
   };
   m.meters = () => [{ k: 'aw', label: gt('aware') }, { k: 'tray', label: gt('tray') }];
   m.btns = () => [{ id: 'L', label: gt('left'), side: 'l', hold: (d) => { GM.pL = d; } }, { id: 'R', label: gt('right'), side: 'l', hold: (d) => { GM.pR = d; } },
-    { id: 'H', label: gt('hideBtn'), side: 'r', cls: 'alt', down: () => m.toggleHide() }, { id: 'G', label: gt('goBtn'), side: 'r', cls: 'big', hold: (d) => { GM.go = d; } }];
+    { id: 'H', label: gt('hideBtn'), icon: 'hide', side: 'r', cls: 'alt', down: () => m.toggleHide() }, { id: 'G', label: gt('goBtn'), icon: 'walk', side: 'r', cls: 'big', hold: (d) => { GM.go = d; } }];
   m.key = (c) => { if (c === 'KeyH' || c === 'KeyE' || c === 'ShiftLeft') m.toggleHide(); };
   m.input = () => {};
   m.toggleHide = () => {
     if (state.over) return;
-    if (m.hid) { m.hid = null; player.visible = true; player.position.x = gmClamp(player.position.x, -W + 0.6, W - 0.6); const b = GM.btn.H; b && (b.textContent = gt('hideBtn')); return; }
+    if (m.hid) { m.hid = null; player.visible = true; player.position.x = gmClamp(player.position.x, -W + 0.6, W - 0.6); const b = GM.btn.H; gmIcon(b, 'hide'); return; }
     const pz = player.position.z, px = player.position.x; let best = null, bd = 9;
     for (const s of m.spots) { const d = Math.hypot(s.x - px, s.z - pz); if (d < 2.0 && d < bd) { bd = d; best = s; } }
-    if (best) { m.hid = best; player.visible = false; SFX.tap && SFX.tap(); const b = GM.btn.H; b && (b.textContent = gt('outBtn')); }
+    if (best) { m.hid = best; player.visible = false; SFX.tap && SFX.tap(); const b = GM.btn.H; gmIcon(b, 'eye'); }
   };
   const caught = () => {
     m.caught++; m.aw = 0; m.tray = Math.max(0, m.tray - 0.12); SFX.hit(); feedbackHit(); gmPop(gt('spotted'), 'warn'); gmSetHits(m.caught);
@@ -7457,7 +7498,7 @@ GM.modes[9] = () => {
     if (!m.puzzle) gmSymEl.innerHTML = known.map((k, i) => `<button type="button" disabled style="width:58px;height:58px;pointer-events:none">${k}</button>`).join('');
   };
   m.meters = () => [{ k: 'tab', label: gt('tablets') }];
-  m.btns = () => [{ id: 'L', label: gt('left'), side: 'l', hold: (d) => { GM.pL = d; } }, { id: 'R', label: gt('right'), side: 'l', hold: (d) => { GM.pR = d; } }, { id: 'G', label: gt('goBtn'), side: 'r', cls: 'big', hold: (d) => { GM.go = d; } }];
+  m.btns = () => [{ id: 'L', label: gt('left'), side: 'l', hold: (d) => { GM.pL = d; } }, { id: 'R', label: gt('right'), side: 'l', hold: (d) => { GM.pR = d; } }, { id: 'G', label: gt('goBtn'), icon: 'walk', side: 'r', cls: 'big', hold: (d) => { GM.go = d; } }];
   m.input = () => {}; m.key = () => {};
   const openPuzzle = () => {
     m.puzzle = true; m.slots = [-1, -1, -1]; gmBtns.style.visibility = 'hidden'; m.renderPuzzle();
@@ -7615,7 +7656,7 @@ GM.modes[12] = () => {
     try { const cane = new THREE.Group(); const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 1.15, 6), new THREE.MeshStandardMaterial({ color: 0x9fd35c, roughness: 0.6 })); stalk.position.set(0, -0.1, -0.35); stalk.rotation.x = Math.PI / 2 - 0.5; cane.add(stalk);
       for (let k = 0; k < 4; k++) { const nd = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.012, 4, 8), new THREE.MeshStandardMaterial({ color: 0x4f7a2a })); nd.position.set(0, -0.1 + 0.2 * Math.sin(Math.PI / 2 - 0.5) * (k - 1.5) * -1, -0.35 + 0.2 * (k - 1.5) * 0.88); nd.rotation.x = -0.5; cane.add(nd); } m.cane = cane; sayed.userData.joints.foreR.add(cane); } catch (e) { m.cane = null; }
     // HUD pieces (own stick + button cluster + boss bar; the shared gm panel carries the meters)
-    el.stick = document.createElement('div'); el.stick.id = 'zStick'; el.stick.className = 'ui'; el.stick.innerHTML = '<div class="zr"></div><div class="zk"></div>'; hudEl.appendChild(el.stick);
+    el.stick = document.createElement('div'); el.stick.id = 'zStick'; el.stick.className = 'ui'; el.stick.innerHTML = '<div class="zr"><i class="ar u"></i><i class="ar d"></i><i class="ar l"></i><i class="ar r"></i></div><div class="zk"></div>'; hudEl.appendChild(el.stick);
     const knob = el.stick.querySelector('.zk'), ring = el.stick.querySelector('.zr'); let sid = null;
     const upd = (e) => { const r = ring.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, Rr = r.width * 0.36; let dx = e.clientX - cx, dy = e.clientY - cy; const d = Math.hypot(dx, dy); if (d > Rr) { dx *= Rr / d; dy *= Rr / d; }
       knob.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0)`; const nx = dx / Rr, ny = dy / Rr, mag = Math.hypot(nx, ny); m.stick.x = mag < 0.14 ? 0 : nx; m.stick.z = mag < 0.14 ? 0 : ny; };
@@ -7626,7 +7667,7 @@ GM.modes[12] = () => {
     el.rel = rel;
     el.btns = document.createElement('div'); el.btns.id = 'zBtns'; el.btns.className = 'ui';
     const B = [['H', 'z_hit', 'big', () => { m.hold.hit = true; m.doSwing(); }, () => { m.hold.hit = false; }], ['T', 'z_throw', '', () => m.doThrow(), null], ['G', 'z_guard', 'alt', () => m.doGuard(), null], ['N', 'z_call', 'noga', () => m.doCall(), null]];
-    for (const [id, k, cls, dn, up] of B) { const b = document.createElement('button'); b.type = 'button'; b.className = 'zb ' + cls; b.dataset.id = id; b.innerHTML = `<span>${gt(k)}</span><i></i>`; b.setAttribute('aria-label', gt(k));
+    for (const [id, k, cls, dn, up] of B) { const b = document.createElement('button'); b.type = 'button'; b.className = 'zb ' + cls; b.dataset.id = id; b.innerHTML = gi({ H: 'cane', T: 'sandal', G: 'shield', N: 'call' }[id]) + '<i></i>'; b.setAttribute('aria-label', gt(k));
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch {} dn(); });
       const u = () => { if (!b.classList.contains('on')) return; b.classList.remove('on'); up && up(); }; b.addEventListener('pointerup', u); b.addEventListener('pointercancel', u); b.addEventListener('lostpointercapture', u); el.btns.appendChild(b); }
     hudEl.appendChild(el.btns); m.btnEl = {};
