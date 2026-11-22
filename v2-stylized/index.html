@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1410">
-<title>عريس الجنة — V2 Golden Hour 2D</title>
+<title>عريس الجنة — V2 Golden Hour 2.5D</title>
 <style>
   html, body {
     margin: 0; height: 100%; background: #1a1410;
@@ -6245,7 +6245,7 @@ function updateCamera(dt, snap = false) {
   // Follow x partially and ignore jump height, so the frame stays steady.
   const px = player.position.x * (GM.on ? GM.camFollow : CAMERA.followX), pz = player.position.z;
   if (GM.on) { camTarget.set(px, 0, pz).add(GM.camOff); lookTarget.set(px, 0, pz).add(GM.camLook); const gf = gmFov(); if (Math.abs(camera.fov - gf) > 0.05) { camera.fov += (gf - camera.fov) * (snap ? 1 : Math.min(1, dt * 4)); camera.updateProjectionMatrix(); } }
-  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); if (STAGE.n === 1 && m01Cam(dt)) snap = true; if (window.__gh && window.__gh.camW > 0) window.__gh.camBlend(camTarget, lookTarget, px, pz); }
+  else { camTarget.set(px, PLAYER_Y, pz).add(CAMERA.offset); lookTarget.set(px, PLAYER_Y, pz).add(CAMERA.lookAhead); if (STAGE.n === 1 && m01Cam(dt)) snap = true; if (window.__side && window.__side.on) window.__side.apply(camTarget, lookTarget, px, pz); if (window.__gh && window.__gh.camW > 0) window.__gh.camBlend(camTarget, lookTarget, px, pz); }
   const t = snap ? 1 : 1 - Math.exp(-(GM.on ? GM.camDamp : CAMERA.damping) * dt); // frame-rate independent smoothing
   camera.position.lerp(camTarget, t);
   if (FX.shake > 0) { FX.shake = Math.max(0, FX.shake - dt); const a = FX.shake * 0.25; camera.position.x += (Math.random() - 0.5) * a; camera.position.y += (Math.random() - 0.5) * a; }
@@ -8086,9 +8086,24 @@ const TOON = (() => {
   return API;
 })();
 window.__toon = TOON;
+// ======================= V2 SIDE 2.5D: side-on camera, near-side street clipped away (gameplay untouched) =======================
+const SIDE = (() => {
+  const API = { off: new THREE.Vector3(9, 3.2, 2.5), look: new THREE.Vector3(0, 2.6, -3.5), fov: 70 };   // side-on, slightly behind: portrait frame still shows ~10 m of road ahead
+  try { Object.defineProperty(THREE.ShaderMaterial.prototype, 'clipping', { get() { return true; }, set() {}, configurable: true }); } catch {}   // ink-outline hulls must respect the clip too
+  const clip = [new THREE.Plane(new THREE.Vector3(-1, 0, 0), 3.5)];               // keep x <= 3.5: hides the facades between the camera and the road
+  API.active = () => ui.mode === 'playing' && !GM.on && !CINE.on && !INTRO.on && MS.state !== 'VICTORY';
+  API.apply = (ct, lt, px, pz) => {
+    if (STAGE.n === 1 && (M1.introT > 0 || M1.cutT > 0)) return;                    // M01 opening pan + Bo'ga entrance shot stay as authored
+    ct.set(px * 0.35, 0, pz).add(API.off); lt.set(px * 0.35, 0, pz).add(API.look);
+    if (Math.abs(camera.fov - API.fov) > 0.05 && !(PWR.tray > 0)) { camera.fov += (API.fov - camera.fov) * 0.15; camera.updateProjectionMatrix(); }
+  };
+  API.tick = () => { const on = API.active(); if (on !== API.on) { API.on = on; renderer.clippingPlanes = on ? clip : []; } };
+  return API;
+})();
+window.__side = SIDE;
 renderer.setAnimationLoop(() => {
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
-  perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick();
+  perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick(); SIDE.tick();
   if (ui.mode === 'playing' && !state.over) { // menus, pause and results freeze the run
     const n = Math.max(1, Math.round(DEBUG.timeScale));                // M12: fixed sub-steps (tests can speed time up without tunnelling)
     for (let k = 0; k < n && !state.over && ui.mode === 'playing'; k++) stepGame(dt);
