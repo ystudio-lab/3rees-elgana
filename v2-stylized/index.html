@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a1410">
-<title>عريس الجنة — V2 Golden Hour</title>
+<title>عريس الجنة — V2 Golden Hour 2D</title>
 <style>
   html, body {
     margin: 0; height: 100%; background: #1a1410;
@@ -7947,7 +7947,7 @@ function fxRender(dt) {
   if (want && !PFX.lib && !PFX.loading) fxLoad();
   if (want && PFX.lib && PFX.built !== PFX.level) fxBuild();
   const act = want && PFX.ready; if (act !== PFX.active) { PFX.active = act; fxSurfaces(act); }
-  if (!act) return renderer.render(scene, camera);
+  if (!act) return window.__ghOutline ? window.__ghOutline.render(scene, camera) : renderer.render(scene, camera);
   const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight, k = w + 'x' + h + '@' + renderer.getPixelRatio(); if (k !== PFX.size) { PFX.size = k; PFX.composer.setSize(w, h, false); }
   PFX.composer.render(dt);
 }
@@ -8026,7 +8026,7 @@ const GH = (() => {
   const signGeo = mergeGeometries([sg1, sg2]), signs = [], brackets = [];
   for (const sg of [-1, 1]) for (let k = 0; k < 3; k++) { const z = -2 - k * 16 - rnd() * 8, row = Math.floor(rnd() * R), y = 3.5 + rnd() * 0.5;
     signs.push({ x: sg * (X - 0.82), y, z, row: R - 1 - row }); brackets.push({ x: sg * (X - 0.78), y: y + 0.24, z, sx: 1.6, sy: 0.05, sz: 0.05, c: '#2a2622' }); }
-  const signMat = new THREE.MeshStandardMaterial({ map: sTex, roughness: 0.75, emissive: 0xffffff, emissiveMap: sTex, emissiveIntensity: 0.12 });
+  const signMat = new THREE.MeshStandardMaterial({ map: sTex, roughness: 0.75, emissive: 0xffffff, emissiveMap: sTex, emissiveIntensity: 0.12 }); signMat.userData.ghKeep = true;
   signMat.onBeforeCompile = (sh) => { sh.vertexShader = 'attribute float aRow;\n' + sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_MAP\n vMapUv.y = (vMapUv.y + aRow) / ' + R + '.0;\n#endif\n#ifdef USE_EMISSIVEMAP\n vEmissiveMapUv.y = (vEmissiveMapUv.y + aRow) / ' + R + '.0;\n#endif'); };
   inst(signGeo, signMat, signs, true, 'row');
   inst(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.4 }), brackets, false);
@@ -8055,9 +8055,40 @@ const GH = (() => {
   return API;
 })();
 window.__gh = GH;
+// ======================= V2 2D CARTOON LOOK: flat toon materials + ink outlines (gameplay untouched) =======================
+const TOON = (() => {
+  const grad = (() => { const t = new THREE.DataTexture(new Uint8Array([120, 255]), 2, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
+  const soft = (() => { const t = new THREE.DataTexture(new Uint8Array([150, 205, 255]), 3, 1, THREE.RedFormat); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
+  const cache = new WeakMap(), pairs = [], KEYS = ['opacity', 'transparent', 'visible', 'emissiveIntensity', 'map', 'alphaTest', 'depthWrite'];
+  const conv = (m, hi) => {
+    if (!m || m.isMeshToonMaterial || m.isShaderMaterial || !(m.isMeshStandardMaterial || m.isMeshLambertMaterial || m.isMeshPhongMaterial)) {
+      if (m && (m.isMeshBasicMaterial || m.isSpriteMaterial || m.blending === THREE.AdditiveBlending || (m.transparent && m.opacity < 0.95))) m.userData.outlineParameters = { visible: false };
+      return m; }
+    let t = cache.get(m); if (t) return t;
+    t = new THREE.MeshToonMaterial({ gradientMap: hi ? soft : grad, vertexColors: m.vertexColors, side: m.side, fog: m.fog, flatShading: m.flatShading, alphaMap: m.alphaMap, emissiveMap: m.emissiveMap || null, aoMap: m.aoMap || null });
+    t.color = m.color; if (m.emissive) t.emissive = m.emissive; t.name = m.name; t.userData = m.userData;
+    if (m.userData.ghKeep) { t.onBeforeCompile = m.onBeforeCompile; t.customProgramCacheKey = () => 'gh-toon-keep'; }
+    const last = {}; for (const k of KEYS) if (k in m) { t[k] = m[k]; last[k] = m[k]; }
+    if (hi) t.userData = Object.assign({}, m.userData, { outlineParameters: { visible: false } });   // detailed characters: soft 3-tone, no hull outline (noisy on dense meshes)
+    if (m.transparent && m.opacity < 0.95) t.userData = Object.assign({}, m.userData, { outlineParameters: { visible: false } });
+    cache.set(m, t); cache.set(t, t); pairs.push([m, t, last]); return t;
+  };
+  const swap = (o) => { if (!o.isMesh || !o.material) return; const hi = o.isSkinnedMesh || (o.geometry && o.geometry.attributes.position && o.geometry.attributes.position.count > 6000); if (Array.isArray(o.material)) o.material = o.material.map((m) => conv(m, hi)); else o.material = conv(o.material, hi); };
+  renderer.shadowMap.enabled = false; sun.castShadow = false;                     // flat cartoon: no realistic cast shadows
+  try { PFX.level = 0; } catch {}                                                  // cinematic post-FX (DOF/bloom) off in the 2D look
+  const API = { on: true, n: 0, outline: null };
+  import('three/addons/effects/OutlineEffect.js').then(({ OutlineEffect }) => { API.outline = new OutlineEffect(renderer, { defaultThickness: 0.009, defaultColor: [0.09, 0.06, 0.04], defaultAlpha: 1, defaultKeepAlive: true }); window.__ghOutline = API.outline; const r0 = API.outline.render.bind(API.outline); API.outline.render = (a, b) => { API.calls = (API.calls || 0) + 1; r0(a, b); }; }).catch(() => {});
+  API.tick = () => {
+    if ((API.n++ % 20) === 0) scene.traverse(swap);
+    for (const [m, t, last] of pairs) for (const k of KEYS) if (m[k] !== last[k]) { last[k] = m[k]; t[k] = m[k]; if (k === 'transparent' || k === 'map') t.needsUpdate = true; }
+  };
+  scene.traverse(swap);
+  return API;
+})();
+window.__toon = TOON;
 renderer.setAnimationLoop(() => {
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
-  perfTick(raw); wakeTick(); GH.tick(dt);
+  perfTick(raw); wakeTick(); GH.tick(dt); TOON.tick();
   if (ui.mode === 'playing' && !state.over) { // menus, pause and results freeze the run
     const n = Math.max(1, Math.round(DEBUG.timeScale));                // M12: fixed sub-steps (tests can speed time up without tunnelling)
     for (let k = 0; k < n && !state.over && ui.mode === 'playing'; k++) stepGame(dt);
